@@ -1,0 +1,77 @@
+{
+  "Vertical Mockups Master - 1.PNG": {
+    "quad": [
+      {
+        "x": 378.225,
+        "y": 467.0625
+      },
+      {
+        "x": 1155.3490044934024,
+        "y": 496.51365702479336
+      },
+      {
+        "x": 1076.425,
+        "y": 1116.5625
+      },
+      {
+        "x": 415.25,
+        "y": 1113.525
+      }
+    ],
+    "side": "front",
+    "tags": [
+      "blue",
+      "book"
+    ],
+    "name": "Olive Front Test",
+    "calibratedAt": "2026-09-04T02:34:01.988Z"
+  },
+  "Vertical Mockups Master - 2.PNG": {
+    "quad": [
+      {
+        "x": 446.0625,
+        "y": 378.525
+      },
+      {
+        "x": 1091.575,
+        "y": 394.3
+      },
+      {
+        "x": 1068.1375,
+        "y": 940.125
+      },
+      {
+        "x": 442.65,
+        "y": 932.9125
+      }
+    ],
+    "side": "front",
+    "tags": [],
+    "name": "Vertical Mockups Master - 2.PNG",
+    "calibratedAt": "2026-09-04T01:51:19.532Z"
+  },
+  "Vertical Mockups Master - 7.PNG": {
+    "quad": [
+      {
+        "x": 522.675,
+        "y": 760.175
+      },
+      {
+        "x": 1134.65,
+        "y": 738.1375
+      },
+      {
+        "x": 1149.0375,
+        "y": 1237.4375
+      },
+      {
+        "x": 506.3625,
+        "y": 1247.625
+      }
+    ],
+    "side": "front",
+    "tags": [],
+    "name": "Vertical Mockups Master - 7.PNG",
+    "calibratedAt": "2026-09-04T01:53:05.892Z"
+  }
+}
