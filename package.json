@@ -38,6 +38,7 @@
       "**/node_modules/canvas/**"
     ],
     "mac": {
+      "icon": "build/icon.icns",
       "category": "public.app-category.graphics-design",
       "target": [
         "dmg",
