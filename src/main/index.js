@@ -1,12 +1,18 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { registerIpcHandlers, initDataDirs } from './ipc.js'
+
+// Only present in dev (not bundled into the packaged app) — the packaged app gets its icon
+// from the .icns baked into the bundle via Info.plist instead.
+const DEV_ICON_PATH = join(app.getAppPath(), 'build/icon.png')
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1400,
     height: 960,
     show: true,
+    icon: existsSync(DEV_ICON_PATH) ? DEV_ICON_PATH : undefined,
     webPreferences: {
       preload: join(app.getAppPath(), 'out/preload/index.mjs'),
       contextIsolation: true,
@@ -35,6 +41,9 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  if (process.platform === 'darwin' && existsSync(DEV_ICON_PATH)) {
+    app.dock?.setIcon(DEV_ICON_PATH)
+  }
   await initDataDirs()
   registerIpcHandlers()
   createWindow()

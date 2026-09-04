@@ -2,6 +2,8 @@
 
 <br />
 <div align="center">
+  <img src="docs/logo.png" alt="Logo" width="80" height="80">
+
   <h3 align="center">T-Shirt Bulk Placement</h3>
 
   <p align="center">
@@ -26,6 +28,7 @@
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
         <li><a href="#installation">Installation</a></li>
+        <li><a href="#building-a-macos-app">Building a macOS App</a></li>
       </ul>
     </li>
     <li>
@@ -95,6 +98,16 @@ The result: what took one design × one photo × manual placement now takes one 
    ```sh
    npm run dev
    ```
+
+### Building a macOS App
+
+One command builds and packages a standalone `.app` (plus a `.dmg` and `.zip`) into `release/`:
+
+```sh
+npm run dist:mac
+```
+
+This handles rebuilding the native `canvas` module against Electron's own Node/V8 version automatically — no manual steps. The build is unsigned (no Apple Developer certificate configured), so macOS will show an "unidentified developer" warning on first launch; right-click the app and choose **Open** to bypass it once.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
