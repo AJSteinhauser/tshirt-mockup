@@ -1,5 +1,5 @@
 import { ipcMain, app, dialog, BrowserWindow } from 'electron'
-import { readFile, writeFile, mkdir, readdir, copyFile, unlink, cp } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, readdir, copyFile, unlink } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, extname, basename } from 'node:path'
 import { exportDesignToAllShirts } from './exporter.js'
@@ -21,10 +21,26 @@ const TEMPLATE_CONFIG_PATH = join(CONFIG_DIR, 'template.json')
 const SHIRTS_CONFIG_PATH = join(CONFIG_DIR, 'shirts.json')
 const OUTPUT_DIR = app.getPath('downloads')
 
+// fs.promises.cp can't read from inside an app.asar archive (packaged builds) — it uses
+// internals that bypass Electron's asar-aware fs shim. Walk and copy by hand instead, using
+// only the primitives (readdir/readFile/writeFile/mkdir) that shim actually supports.
+async function copyRecursive(src, dest) {
+  await mkdir(dest, { recursive: true })
+  const entries = await readdir(src, { withFileTypes: true })
+  for (const entry of entries) {
+    const srcPath = join(src, entry.name)
+    const destPath = join(dest, entry.name)
+    if (entry.isDirectory()) {
+      await copyRecursive(srcPath, destPath)
+    } else if (entry.isFile()) {
+      await writeFile(destPath, await readFile(srcPath))
+    }
+  }
+}
+
 async function migrateIfMissing(oldPath, newPath) {
   if (existsSync(newPath) || !existsSync(oldPath)) return
-  await mkdir(join(newPath, '..'), { recursive: true })
-  await cp(oldPath, newPath, { recursive: true })
+  await copyRecursive(oldPath, newPath)
 }
 
 // One-time migration for installs that still have data sitting next to the app source
