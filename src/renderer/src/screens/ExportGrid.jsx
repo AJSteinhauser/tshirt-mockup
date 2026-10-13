@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { computeHomography, applyHomography, rectToQuad } from '../lib/homography.js'
 import { warpImageIntoQuad } from '../lib/warp.js'
 import { loadImageElement } from '../lib/loadImage.js'
+import { loadShirtThumbnail } from '../lib/shirtThumbnails.js'
+import { runWithConcurrency } from '../lib/runWithConcurrency.js'
 
 const THUMB_MAX_DIM = 280
+const PREVIEW_CONCURRENCY = 3
 
 export default function ExportGrid({
   templateQuads,
@@ -65,20 +68,18 @@ export default function ExportGrid({
       const sourceImageData = designCtx.getImageData(0, 0, designImg.width, designImg.height)
       const designCorners = rectToQuad(transform)
 
-      const next = {}
-      await Promise.all(
-        calibratedShirts.map(async (filename) => {
-          const shirtEntry = shirtsConfig[filename]
-          const dataUrl = await window.api.getShirtImage(filename)
-          const shirtImg = await loadImageElement(dataUrl)
+      await runWithConcurrency(calibratedShirts, PREVIEW_CONCURRENCY, async (filename) => {
+        if (cancelled) return
+        const shirtEntry = shirtsConfig[filename]
+        try {
+          const { bitmap, scale } = await loadShirtThumbnail(filename, THUMB_MAX_DIM)
           if (cancelled) return
 
-          const scale = Math.min(1, THUMB_MAX_DIM / Math.max(shirtImg.width, shirtImg.height))
           const canvas = document.createElement('canvas')
-          canvas.width = Math.round(shirtImg.width * scale)
-          canvas.height = Math.round(shirtImg.height * scale)
+          canvas.width = bitmap.width
+          canvas.height = bitmap.height
           const ctx = canvas.getContext('2d')
-          ctx.drawImage(shirtImg, 0, 0, canvas.width, canvas.height)
+          ctx.drawImage(bitmap, 0, 0)
 
           const templateToShirt = computeHomography(templateQuad, shirtEntry.quad)
           const dstQuad = designCorners
@@ -95,14 +96,14 @@ export default function ExportGrid({
             clipQuad
           })
 
-          next[filename] = canvas.toDataURL('image/png')
-        })
-      )
+          const previewSrc = canvas.toDataURL('image/png')
+          if (!cancelled) setPreviews((prev) => ({ ...prev, [filename]: previewSrc }))
+        } catch (err) {
+          console.error(`Preview failed for ${filename}`, err)
+        }
+      })
 
-      if (!cancelled) {
-        setPreviews(next)
-        setLoadingPreviews(false)
-      }
+      if (!cancelled) setLoadingPreviews(false)
     }
     run()
     return () => {

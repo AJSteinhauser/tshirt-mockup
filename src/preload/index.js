@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   deleteShirtImage: (filename) => ipcRenderer.invoke('delete-shirt-image', filename),
   getTemplateImage: (side) => ipcRenderer.invoke('get-template-image', side),
   getShirtImage: (filename) => ipcRenderer.invoke('get-shirt-image', filename),
+  getShirtImageBytes: (filename) => ipcRenderer.invoke('get-shirt-image-bytes', filename),
   loadConfig: () => ipcRenderer.invoke('load-config'),
   saveTemplateQuad: (side, quad) => ipcRenderer.invoke('save-template-quad', side, quad),
   saveShirtMeta: (filename, partial) => ipcRenderer.invoke('save-shirt-meta', filename, partial),

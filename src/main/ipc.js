@@ -163,6 +163,10 @@ export function registerIpcHandlers() {
     fileToDataUrl(join(SHIRTS_DIR, filename))
   )
 
+  ipcMain.handle('get-shirt-image-bytes', async (_e, filename) =>
+    readFile(join(SHIRTS_DIR, filename))
+  )
+
   ipcMain.handle('load-config', async () => {
     const template = normalizeTemplateConfig(await readJson(TEMPLATE_CONFIG_PATH, null))
     const shirts = normalizeShirtsConfig(await readJson(SHIRTS_CONFIG_PATH, {}))

@@ -4,6 +4,7 @@ import TagInput from '../components/TagInput.jsx'
 import { computeHomography, applyHomography, rectToQuad } from '../lib/homography.js'
 import { warpImageIntoQuad } from '../lib/warp.js'
 import { loadImageElement } from '../lib/loadImage.js'
+import { evictShirtThumbnails } from '../lib/shirtThumbnails.js'
 
 const AUTOSAVE_DELAY = 500
 const EMPTY_SNAPSHOT = { quad: null, side: 'front', tags: [], name: '' }
@@ -53,6 +54,7 @@ export default function ShirtCalibration({
     setDeleting(filename)
     const result = await window.api.deleteShirtImage(filename)
     if (result.deleted) {
+      evictShirtThumbnails(filename)
       onShirtFilesChanged(result.files)
       onShirtsConfigChanged(result.shirts)
       if (selected === filename) setSelected(result.files[0] ?? null)
