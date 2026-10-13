@@ -1502,8 +1502,7 @@ label,
 }
 
 .export-card:not(.selected) .export-card-photo {
-  filter: grayscale(1);
-  opacity: 0.45;
+  opacity: 0.6;
 }
 
 .export-card:not(.selected) .export-card-label {

@@ -1,6 +1,6 @@
 {
   "name": "tshirt-automation",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Bulk-place a design onto t-shirt mockup photos with perspective-correct warping",
   "main": "./out/main/index.js",
   "private": true,
