@@ -54,30 +54,71 @@ h3 {
 /* ---------- shell ---------- */
 
 .app {
+  position: relative;
   display: flex;
-  flex-direction: column;
   height: 100%;
 }
 
-.app-body {
+.app-main {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  padding-top: var(--eave-height);
 }
 
 main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: auto;
   padding: 28px 36px 28px;
+}
+
+/* ---------- embroidery ---------- */
+
+.embroidering {
+  position: relative;
+}
+
+.embroidering-needle {
+  position: absolute;
+  top: -14px;
+  right: -30px;
+}
+
+.placement-canvas canvas,
+.placement-canvas .btn {
+  position: relative;
+  z-index: 1;
+}
+
+.embroidered-sprig {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.embroidered-garland {
+  display: block;
+  margin: 10px auto -4px;
+}
+
+.design-drop .embroidered-hoop {
+  margin-bottom: 4px;
 }
 
 /* ---------- cottage chrome ---------- */
 
 .cottage-eaves {
-  position: relative;
-  z-index: 3;
-  flex-shrink: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
   line-height: 0;
   -webkit-app-region: drag;
   user-select: none;
@@ -86,7 +127,7 @@ main {
 
 .cottage-sign {
   position: absolute;
-  top: 26px;
+  top: 14px;
   left: 50%;
   margin-left: -75px;
   width: 150px;
@@ -108,11 +149,28 @@ main {
   color: var(--bark);
 }
 
-.sidebar-ivy {
+.sidebar-drag {
   position: absolute;
-  top: -4px;
-  right: 10px;
+  inset: 0 0 auto;
+  height: 40px;
+  -webkit-app-region: drag;
+}
+
+.vine {
+  position: absolute;
   pointer-events: none;
+}
+
+.vine-sidebar-top {
+  top: calc(var(--eave-height) - 8px);
+  right: 8px;
+}
+
+
+.vine-eave {
+  top: 18px;
+  right: 22px;
+  z-index: -1;
 }
 
 .cross-stitch {
@@ -121,6 +179,8 @@ main {
 }
 
 .sidebar-garden {
+  position: relative;
+  z-index: 1;
   margin-top: auto;
   display: flex;
   flex-direction: column;
@@ -134,9 +194,8 @@ main {
   transform-origin: 50% 100%;
 }
 
-.sidebar:hover .garden-flower,
-.sidebar-garden.is-celebrating .garden-flower {
-  animation: flower-sway 1.6s ease-in-out infinite alternate;
+.garden-flower {
+  animation: flower-sway 2.8s ease-in-out infinite alternate;
 }
 
 .sidebar-garden.is-celebrating .garden-flower {
@@ -192,7 +251,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 22px;
-  padding: 24px 14px 20px;
+  padding: 48px 14px 20px;
   background: var(--linen-deep) var(--linen-texture);
   border-right: var(--stitch);
   position: relative;

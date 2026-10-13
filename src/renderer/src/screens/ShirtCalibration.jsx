@@ -8,7 +8,8 @@ import SaveStitch from '../components/SaveStitch.jsx'
 import DropZone from '../components/DropZone.jsx'
 import ShirtThumb from '../components/ShirtThumb.jsx'
 import NoticeCard from '../components/NoticeCard.jsx'
-import { ShirtIcon, UploadIcon } from '../components/ornaments.jsx'
+import { UploadIcon } from '../components/ornaments.jsx'
+import { EmbroideredHoop, EmbroideredSprig } from '../components/embroidery.jsx'
 import { composeShirtPreview } from '../lib/warp.js'
 import { loadImageData, loadImageElement } from '../lib/loadImage.js'
 import { sameItems } from '../lib/sameItems.js'
@@ -260,6 +261,7 @@ export default function ShirtCalibration({
             </div>
             <div className="calibration-pair">
               <div className="hoop-card hoop-fill">
+                <EmbroideredSprig variant="lavender" />
                 <div ref={templateSlotRef} className="canvas-slot">
                   <QuadEditor
                     imageSrc={templateSrcs[localSide]}
@@ -272,6 +274,7 @@ export default function ShirtCalibration({
                 </div>
               </div>
               <div className="hoop-card hoop-fill">
+                <EmbroideredSprig variant="rosebud" />
                 <div ref={shirtSlotRef} className="canvas-slot">
                   {shirtSrc && (
                     <QuadEditor
@@ -289,7 +292,7 @@ export default function ShirtCalibration({
             </div>
           </div>
         ) : (
-          <NoticeCard icon={<ShirtIcon size={28} />} title="No mockups yet">
+          <NoticeCard icon={<EmbroideredHoop size={96} />} title="No mockups yet">
             <p>Drop lifestyle photos of your blank shirts into the list, or use “Add or drop photos”.</p>
           </NoticeCard>
         )}

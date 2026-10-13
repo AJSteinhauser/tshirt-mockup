@@ -31,9 +31,12 @@
   --plaster: #f8f2e6;
   --lavender: #a99bd3;
   --lavender-deep: #8576b8;
+  --forget-me-not: #94acc9;
 
   --font-display: 'Fraunces Variable', Georgia, serif;
   --font-ui: 'Nunito Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --eave-height: 30px;
 
   --radius-sm: 8px;
   --radius: 14px;

@@ -66,15 +66,6 @@ export function SpoolIcon(props) {
   )
 }
 
-export function SprigIcon(props) {
-  return (
-    <Icon {...props}>
-      <path d="M12 21V8" />
-      <path d="M12 14c-3 0-5-2-5-5 3 0 5 2 5 5zM12 11c3 0 5-2 5-5-3 0-5 2-5 5zM12 8c0-2 1-4 3-5" />
-    </Icon>
-  )
-}
-
 export function FolderIcon(props) {
   return (
     <Icon {...props}>
@@ -123,33 +114,6 @@ export function StitchCheck({ size = 14 }) {
         animate={{ pathLength: 1 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
       />
-    </svg>
-  )
-}
-
-export function NeedleAndThread({ size = 120 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true">
-      <motion.path
-        d="M14 92 C 30 60, 52 104, 66 72 S 96 40, 84 26"
-        fill="none"
-        stroke="var(--terracotta)"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeDasharray="6 5"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1.4, ease: 'easeInOut', repeat: Infinity, repeatType: 'reverse' }}
-      />
-      <motion.g
-        initial={{ rotate: -8 }}
-        animate={{ rotate: 8 }}
-        transition={{ duration: 1.4, ease: 'easeInOut', repeat: Infinity, repeatType: 'reverse' }}
-        style={{ originX: '84px', originY: '26px' }}
-      >
-        <path d="M84 26 L106 4" stroke="var(--ink-soft)" strokeWidth="3" strokeLinecap="round" />
-        <ellipse cx="102" cy="8" rx="1.4" ry="3" transform="rotate(45 102 8)" fill="var(--linen)" />
-      </motion.g>
     </svg>
   )
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import Sidebar from './components/Sidebar.jsx'
 import CottageEaves from './components/CottageEaves.jsx'
-import { NeedleAndThread } from './components/ornaments.jsx'
+import { EmbroideringNeedle } from './components/embroidery.jsx'
 import TemplateSetup from './screens/TemplateSetup.jsx'
 import ShirtCalibration from './screens/ShirtCalibration.jsx'
 import DesignPlacement from './screens/DesignPlacement.jsx'
@@ -105,7 +105,7 @@ export default function App() {
     <AnimatePresence mode="wait">
       {loading ? (
         <motion.div key="loading" className="app-loading" exit={{ opacity: 0 }}>
-          <NeedleAndThread />
+          <EmbroideringNeedle />
           <span>Threading the needle…</span>
         </motion.div>
       ) : (
@@ -116,15 +116,15 @@ export default function App() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
         >
+          <Sidebar
+            screen={screen}
+            onNavigate={navigate}
+            badges={badges}
+            status={gardenStatus}
+            celebrate={exportsCompleted}
+          />
           <CottageEaves swingKey={screen} />
-          <div className="app-body">
-            <Sidebar
-              screen={screen}
-              onNavigate={navigate}
-              badges={badges}
-              status={gardenStatus}
-              celebrate={exportsCompleted}
-            />
+          <div className="app-main">
             <main ref={mainRef}>
               {visited.has('template') && (
                 <ScreenPanel active={screen === 'template'}>

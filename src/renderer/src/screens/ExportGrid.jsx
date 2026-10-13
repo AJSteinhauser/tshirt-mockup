@@ -4,7 +4,8 @@ import ScreenHeader from '../components/ScreenHeader.jsx'
 import SideToggle from '../components/SideToggle.jsx'
 import NoticeCard from '../components/NoticeCard.jsx'
 import ExportCard from '../components/ExportCard.jsx'
-import { BasketIcon, FolderIcon, ScissorsIcon, SpoolIcon } from '../components/ornaments.jsx'
+import { FolderIcon, ScissorsIcon, SpoolIcon } from '../components/ornaments.jsx'
+import { EmbroideredGarland, EmbroideredHoop } from '../components/embroidery.jsx'
 import { composeShirtPreview } from '../lib/warp.js'
 import { loadImageData } from '../lib/loadImage.js'
 import { SHIRT_THUMB_DIM, loadShirtThumbnail } from '../lib/shirtThumbnails.js'
@@ -202,7 +203,7 @@ export default function ExportGrid({
       <div className="screen">
         {header}
         <NoticeCard
-          icon={<BasketIcon size={28} />}
+          icon={<EmbroideredHoop size={96} />}
           title="The basket’s empty"
           action={
             <button className="btn btn-primary" onClick={() => onNavigate('arrange')}>
@@ -263,6 +264,7 @@ export default function ExportGrid({
             animate={{ opacity: 1, y: 0, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
           >
+            {successCount > 0 && <EmbroideredGarland />}
             <div className="export-result-row">
               <span>
                 <strong>{successCount}</strong> of {exportResult.results.length} mockups folded neatly into{' '}

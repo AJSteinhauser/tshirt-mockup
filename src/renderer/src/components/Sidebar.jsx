@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { BasketIcon, CrossStitchFlower, HoopIcon, ScissorsIcon, ShirtIcon } from './ornaments.jsx'
-import Ivy from './Ivy.jsx'
+import Vine from './Vine.jsx'
 import SidebarGarden from './SidebarGarden.jsx'
 
 const SECTIONS = [
@@ -24,7 +24,8 @@ const SECTIONS = [
 export default function Sidebar({ screen, onNavigate, badges, status, celebrate }) {
   return (
     <aside className="sidebar">
-      <Ivy />
+      <div className="sidebar-drag" />
+      <Vine length={86} className="vine-sidebar-top" />
       {SECTIONS.map((section) => (
         <nav key={section.title} className="sidebar-section">
           <div className="sidebar-section-title">

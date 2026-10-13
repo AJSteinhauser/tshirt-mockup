@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react'
 import { useAnimate } from 'motion/react'
+import Vine from './Vine.jsx'
 
-const HEIGHT = 44
+const HEIGHT = 30
 const SCALLOP = 38
-const THATCH_TOP = 22
+const THATCH_TOP = 0
 
 const SWING = { rotate: [0, 3.2, -2, 1, -0.4, 0] }
 const WIGGLE = { rotate: [0, -1.6, 1.2, -0.5, 0] }
@@ -43,7 +44,6 @@ export default function CottageEaves({ swingKey }) {
             />
           </pattern>
         </defs>
-        <rect width="100%" height={THATCH_TOP + 2} fill="var(--plaster)" />
         <rect width="100%" height={HEIGHT} fill="url(#thatch)" />
       </svg>
 
@@ -61,6 +61,7 @@ export default function CottageEaves({ swingKey }) {
         </svg>
         <span className="cottage-sign-text">Sewing Room</span>
       </div>
+      <Vine length={64} sway={5} className="vine-eave" />
     </header>
   )
 }

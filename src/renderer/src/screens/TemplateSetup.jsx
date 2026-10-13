@@ -4,6 +4,7 @@ import ScreenHeader from '../components/ScreenHeader.jsx'
 import SideToggle from '../components/SideToggle.jsx'
 import SaveStitch from '../components/SaveStitch.jsx'
 import { useElementSize } from '../lib/useElementSize.js'
+import { EmbroideredSprig } from '../components/embroidery.jsx'
 
 const AUTOSAVE_DELAY = 500
 
@@ -55,6 +56,7 @@ export default function TemplateSetup({ side, onSideChange, templateSrcs, templa
         <SideToggle value={side} onChange={onSideChange} />
       </ScreenHeader>
       <div className="hoop-card hoop-fill">
+        <EmbroideredSprig variant={side === 'front' ? 'daisy' : 'bluebells'} />
         <div ref={slotRef} className="canvas-slot">
           {templateSrcs[side] && (
             <QuadEditor

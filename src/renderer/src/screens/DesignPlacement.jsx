@@ -7,7 +7,8 @@ import DropZone from '../components/DropZone.jsx'
 import Filmstrip from '../components/Filmstrip.jsx'
 import NoticeCard from '../components/NoticeCard.jsx'
 import SetupChecklist from '../components/SetupChecklist.jsx'
-import { ArrowIcon, ScissorsIcon, SprigIcon, UploadIcon } from '../components/ornaments.jsx'
+import { ArrowIcon, UploadIcon } from '../components/ornaments.jsx'
+import { EmbroideredHoop, EmbroideredSprig } from '../components/embroidery.jsx'
 import { composeShirtPreview } from '../lib/warp.js'
 import { loadImageData, loadImageElement } from '../lib/loadImage.js'
 import { calibratedShirtsFor } from '../lib/setupStatus.js'
@@ -106,7 +107,7 @@ export default function DesignPlacement({
     return (
       <div className="screen">
         {header}
-        <NoticeCard icon={<SprigIcon size={28} />} title={`Let’s ready the ${side} side first`}>
+        <NoticeCard icon={<EmbroideredHoop size={96} />} title={`Let’s ready the ${side} side first`}>
           <p>A few one-time steps in the Workroom, then this is where every new design starts.</p>
           <SetupChecklist
             steps={[
@@ -155,7 +156,7 @@ export default function DesignPlacement({
         {!design ? (
           <motion.div key="drop" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
             <DropZone onFiles={handleDrop} className="design-drop">
-              <ScissorsIcon size={36} />
+              <EmbroideredHoop size={112} />
               <h3>Drop a design here</h3>
               <p className="hint">PNG with transparency works best.</p>
               <button className="btn" onClick={handleBrowse}>
@@ -172,6 +173,7 @@ export default function DesignPlacement({
             exit={{ opacity: 0 }}
           >
             <DropZone onFiles={handleDrop} className="hoop-card placement-canvas">
+              <EmbroideredSprig variant={side === 'front' ? 'strawberry' : 'forgetMeNot'} />
               <TransformLayer
                 templateSrc={templateSrc}
                 templateQuad={templateQuad}
