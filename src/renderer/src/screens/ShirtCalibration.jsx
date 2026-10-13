@@ -204,7 +204,7 @@ export default function ShirtCalibration({
                     <span className="shirt-list-name">{shirtsConfig[f]?.name ?? f}</span>
                     <span className="shirt-list-meta">
                       <span className={shirtsConfig[f]?.quad ? 'dot dot-ok' : 'dot dot-pending'} />
-                      {shirtsConfig[f]?.quad ? shirtsConfig[f]?.side ?? 'front' : 'needs calibrating'}
+                      {shirtsConfig[f]?.quad ? (shirtsConfig[f]?.side === 'back' ? 'Back' : 'Front') : 'Needs calibrating'}
                     </span>
                   </span>
                   {confirmingDelete === f ? (

@@ -13,6 +13,10 @@
   </p>
 </div>
 
+<p align="center">
+  <img src="docs/screenshots/00-hero.png" alt="One design placed once, landing on five different shirt mockups" />
+</p>
+
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -38,6 +42,7 @@
         <li><a href="#workroom-mockups">Workroom: Mockups</a></li>
         <li><a href="#studio-arrange">Studio: Arrange</a></li>
         <li><a href="#studio-gather--export">Studio: Gather &amp; export</a></li>
+        <li><a href="#exporting">Exporting</a></li>
       </ul>
     </li>
     <li><a href="#where-your-data-lives">Where Your Data Lives</a></li>
@@ -62,7 +67,14 @@ Normally, placing one design across every one of those photos means eyeballing p
 2. Calibrate each mockup photo against that same reference area, once, ever.
 3. From then on, position a design on the template a single time — it drops onto **every** calibrated mockup automatically, correctly warped to each photo's own scale and angle.
 
-The result: what took one design × one photo × manual placement now takes one placement × every photo, automatically.
+The result: what took one design × one photo × manual placement now takes one placement × every photo, automatically:
+
+<p align="center">
+  <img src="docs/screenshots/result-espresso.png" width="280" alt="Espresso mockup with the design applied" />
+  <img src="docs/screenshots/result-ivory.png" width="280" alt="Ivory mockup with the design applied" />
+</p>
+
+All of this happens in a calm, cottage-style workspace — linen and stitched paper, a thatched eave, embroidered flowers — designed so your mockup photos stay the focus.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -71,6 +83,8 @@ The result: what took one design × one photo × manual placement now takes one 
 * [![Electron][Electron.js]][Electron-url]
 * [![React][React.js]][React-url]
 * [![Vite][Vite.js]][Vite-url]
+* [Motion](https://motion.dev/) for page transitions, the export animation and other small touches
+* Fraunces and Nunito Sans, bundled via [Fontsource](https://fontsource.org/) so the app works fully offline
 * Node.js `canvas` (node-canvas) for headless, full-resolution export
 * A small self-contained homography/perspective-warp engine — no image-processing dependency
 
@@ -116,34 +130,54 @@ This handles rebuilding the native `canvas` module against Electron's own Node/V
 
 The sidebar splits the app into two rooms:
 
-- **Workroom** — one-time setup. Mark the template's print area and calibrate your mockup photos. Badges show how much is done.
+- **Workroom** — one-time setup. Mark the template's print area and calibrate your mockup photos. Badges show how much is done (e.g. `2/2` templates, `5/10` mockups).
 - **Studio** — the everyday loop. Arrange a new design, then gather and export it onto every mockup.
 
-The app opens in the Studio. If the side you're working on isn't set up yet, it shows a short checklist that links to the right Workroom screen. Each screen has its own **Front / Back** toggle in the top-right.
+The app opens in the Studio. If the side you're working on isn't set up yet, it shows a short checklist that links straight to the right Workroom screen. Each screen has its own **Front / Back** toggle in the top-right, and the wooden tag at the bottom of the sidebar keeps a running status ("5 mockups hung up & ready").
+
+> **Want to try it quickly?** Use [`docs/screenshots/demo-design-grow-slow.png`](docs/screenshots/demo-design-grow-slow.png) as a sample design.
 
 ### Workroom: Template
 
-Drag the four corner handles onto your flat reference template to mark the print area — the region every mockup photo's chest print will be calibrated against. Front and back each get their own reference area. Changes save automatically as you drag; **Undo changes** reverts back to how it looked when you opened that side.
+Drag the four corner handles onto your flat reference template to mark the print area — the region every mockup photo's chest print will be calibrated against. Front and back each get their own reference area (switch with the **Front / Back** toggle). **Square up** snaps a slightly skewed outline back into a clean rectangle. Changes save automatically as you drag; **Undo changes** reverts back to how it looked when you opened that side.
 
 ![Template Setup](docs/screenshots/01-template-setup.png)
 
 ### Workroom: Mockups
 
-Add mockup photos with the button or by dropping them onto the list. To remove one, hover it, click **×**, then confirm. For each one: pick whether it's a front or back shot, drag its four corners to match the same region you marked on the template, and add any tags you want to filter by later (color, style, whatever's useful). If you've already arranged a design in the Studio, it's previewed live on top so you can check the fit while you calibrate.
+Add mockup photos with **Add or drop photos**, or drag them straight onto the list. Each row shows a thumbnail and whether it's calibrated yet (**Front**, **Back** or **Needs calibrating**). To remove one, hover it, click **×**, then choose **Remove** (or **Keep** to back out).
+
+For each photo: give it a name, pick whether it's a front or back shot, and add any tags you want to filter by later (color, style, whatever's useful). Then drag its four corners so they cover the same region you marked on the template, shown side by side for reference. If you've already arranged a design in the Studio, it's previewed live on the photo so you can check the fit while you calibrate. Everything saves automatically.
 
 ![Shirt Calibration](docs/screenshots/02-shirt-calibration.png)
 
 ### Studio: Arrange
 
-Drop a design onto the page (or browse for one) and position it directly on the template — drag to move, the corner handle to scale, the top handle to rotate. The stitched outline is the print area from the Template screen: anything outside it gets cropped when it lands on a real shirt, so keep your design inside it. Click any calibrated mockup in the filmstrip to preview the actual warped result, then hit **Gather & export**.
+Drop a design onto the page (or **Browse files**) and position it directly on the template — drag to move, the corner handle to scale, the top handle to rotate. The stitched outline is the print area from the Template screen: anything outside it gets cropped when it lands on a real shirt, so keep your design inside it. Drop another file onto the canvas, or use **Swap design**, to replace it.
+
+The panel on the right shows the actual warped result on a real mockup. Click any shirt in the filmstrip underneath to switch which one you're previewing, then hit **Gather & export**.
 
 ![Design Placement](docs/screenshots/03-design-placement.png)
 
 ### Studio: Gather & export
 
-Every calibrated mockup for the current side shows up as a live-rendered thumbnail with your design already warped on. Search by tag or name to narrow the list, click thumbnails to pin or unpin them (search only affects what's *visible* — your selections elsewhere are untouched), then export. Finished images land in your **Downloads** folder, organized into a subfolder named after the design. **Open folder** jumps straight to it.
+Every calibrated mockup for the current side shows up as a card with your design already warped on. Previews render as they scroll into view, so even large collections open instantly.
 
-![Export](docs/screenshots/04-export.png)
+Click a card to pin or unpin it. Pinned cards are in full color with a clothespin and a **✓ Pinned** chip; unpinned ones fade to black and white. Search by tag or name to narrow the grid, and use **Pin all** / **Unpin all** to change everything that's currently visible — search only affects what's *shown*, so selections elsewhere are untouched. Then hit **Export N**.
+
+![Gather & export](docs/screenshots/04-gather.png)
+
+### Exporting
+
+Exporting opens its own window. A wooden embroidery hoop shows the shirt currently being rendered, and a stitched branch grows across the bottom as a progress bar — a needle rides its tip and leaves sprout as mockups finish. **Stop stitching** (or Esc) finishes the current shirt and stops; anything already done stays saved.
+
+![Export in progress](docs/screenshots/05-export-stitching.png)
+
+When it's done, the branch blooms into embroidered flowers and the sidebar's planter does a little celebration. If any shirt couldn't be rendered, an expandable list tells you which and why. **Open folder** jumps straight to the results, and a **Last export** bar stays in Gather until you dismiss it.
+
+![Export finished](docs/screenshots/06-export-finished.png)
+
+Finished images land in your **Downloads** folder, in a subfolder named after the design, each at the mockup photo's full resolution.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
