@@ -123,6 +123,12 @@ npm run dist:mac
 
 This handles rebuilding the native `canvas` module against Electron's own Node/V8 version automatically — no manual steps. The build is unsigned (no Apple Developer certificate configured), so macOS will show an "unidentified developer" warning on first launch; right-click the app and choose **Open** to bypass it once.
 
+If macOS instead says the app is "damaged and can't be opened", clear the quarantine flag by running this in Terminal, then open the app again:
+
+```sh
+xattr -cr "/Applications/T-Shirt Bulk Placement.app"
+```
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
