@@ -9,6 +9,9 @@ contextBridge.exposeInMainWorld('api', {
   getTemplateImage: (side) => ipcRenderer.invoke('get-template-image', side),
   getShirtImage: (filename) => ipcRenderer.invoke('get-shirt-image', filename),
   getShirtImageBytes: (filename) => ipcRenderer.invoke('get-shirt-image-bytes', filename),
+  getCachedShirtThumbnail: (filename, maxDim) => ipcRenderer.invoke('get-cached-shirt-thumbnail', filename, maxDim),
+  saveShirtThumbnail: (filename, maxDim, meta, bytes) =>
+    ipcRenderer.invoke('save-shirt-thumbnail', filename, maxDim, meta, bytes),
   loadConfig: () => ipcRenderer.invoke('load-config'),
   saveTemplateQuad: (side, quad) => ipcRenderer.invoke('save-template-quad', side, quad),
   saveShirtMeta: (filename, partial) => ipcRenderer.invoke('save-shirt-meta', filename, partial),

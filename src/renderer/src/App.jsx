@@ -2,12 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import Sidebar from './components/Sidebar.jsx'
 import CottageEaves from './components/CottageEaves.jsx'
-import { EmbroideringNeedle } from './components/embroidery.jsx'
+import { EmbroideringNeedle, NEEDLE_CYCLE_MS } from './components/embroidery.jsx'
 import TemplateSetup from './screens/TemplateSetup.jsx'
 import ShirtCalibration from './screens/ShirtCalibration.jsx'
 import DesignPlacement from './screens/DesignPlacement.jsx'
 import ExportGrid from './screens/ExportGrid.jsx'
 import { SIDES, calibratedShirtsFor, firstReadySide } from './lib/setupStatus.js'
+
+const MIN_SPLASH_CYCLES = 2
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 const PAGE_TURN = {
   hidden: { opacity: 0, x: 18, transition: { duration: 0 } },
@@ -46,6 +52,7 @@ export default function App() {
 
   useEffect(() => {
     async function init() {
+      const startedAt = performance.now()
       const [frontSrc, backSrc, files, config] = await Promise.all([
         window.api.getTemplateImage('front'),
         window.api.getTemplateImage('back'),
@@ -59,6 +66,8 @@ export default function App() {
       setShirtFiles(files)
       setShirtsConfig(shirts)
       setStudioSide(firstReadySide({ templateQuads: quads, shirtFiles: files, shirtsConfig: shirts }) ?? 'front')
+      const cycles = Math.max(MIN_SPLASH_CYCLES, Math.ceil((performance.now() - startedAt) / NEEDLE_CYCLE_MS))
+      await wait(cycles * NEEDLE_CYCLE_MS - (performance.now() - startedAt))
       setLoading(false)
     }
     init()
@@ -104,7 +113,7 @@ export default function App() {
   return (
     <AnimatePresence mode="wait">
       {loading ? (
-        <motion.div key="loading" className="app-loading" exit={{ opacity: 0 }}>
+        <motion.div key="loading" className="app-loading" exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
           <EmbroideringNeedle />
           <span>Threading the needle…</span>
         </motion.div>
@@ -125,7 +134,7 @@ export default function App() {
           />
           <CottageEaves swingKey={screen} />
           <div className="app-main">
-            <main ref={mainRef}>
+            <main ref={mainRef} data-scroll-root>
               {visited.has('template') && (
                 <ScreenPanel active={screen === 'template'}>
                   <TemplateSetup

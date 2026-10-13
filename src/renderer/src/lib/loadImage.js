@@ -16,3 +16,10 @@ export async function loadImageData(src) {
   ctx.drawImage(img, 0, 0)
   return ctx.getImageData(0, 0, img.width, img.height)
 }
+
+const designImageDataCache = new WeakMap()
+
+export function loadDesignImageData(design) {
+  if (!designImageDataCache.has(design)) designImageDataCache.set(design, loadImageData(design.dataUrl))
+  return designImageDataCache.get(design)
+}

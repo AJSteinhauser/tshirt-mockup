@@ -3,6 +3,7 @@ import QuadEditor from '../components/QuadEditor.jsx'
 import ScreenHeader from '../components/ScreenHeader.jsx'
 import SideToggle from '../components/SideToggle.jsx'
 import SaveStitch from '../components/SaveStitch.jsx'
+import QuadShortcutHints from '../components/QuadShortcutHints.jsx'
 import { useElementSize } from '../lib/useElementSize.js'
 import { EmbroideredSprig } from '../components/embroidery.jsx'
 
@@ -69,6 +70,7 @@ export default function TemplateSetup({ side, onSideChange, templateSrcs, templa
           )}
         </div>
       </div>
+      <QuadShortcutHints />
     </div>
   )
 }

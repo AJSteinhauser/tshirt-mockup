@@ -102,12 +102,16 @@ function warpDesignOntoShirt({ destCtx, sourceImageData, transform, templateQuad
   })
 }
 
-export function composeShirtPreview({ shirtImage, ...placement }) {
+export function composeShirtPreviewCanvas({ shirtImage, ...placement }) {
   const canvas = document.createElement('canvas')
   canvas.width = shirtImage.width
   canvas.height = shirtImage.height
   const destCtx = canvas.getContext('2d')
   destCtx.drawImage(shirtImage, 0, 0)
   warpDesignOntoShirt({ destCtx, ...placement })
-  return canvas.toDataURL('image/png')
+  return canvas
+}
+
+export function composeShirtPreview(args) {
+  return composeShirtPreviewCanvas(args).toDataURL('image/png')
 }

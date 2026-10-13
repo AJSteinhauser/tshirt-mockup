@@ -12,6 +12,8 @@ const TOUCH_EPSILON = 0.5
 
 export default function QuadEditor({
   imageSrc,
+  image: imageOverride,
+  naturalSize,
   quad,
   onChange,
   label,
@@ -19,28 +21,26 @@ export default function QuadEditor({
   maxWidth = DEFAULT_MAX_WIDTH,
   maxHeight = DEFAULT_MAX_HEIGHT
 }) {
-  const image = useImage(imageSrc)
+  const loadedImage = useImage(imageOverride ? null : imageSrc)
+  const image = imageOverride ?? loadedImage
+  const naturalWidth = naturalSize?.width ?? image?.width
+  const naturalHeight = naturalSize?.height ?? image?.height
   const canvasRef = useRef(null)
   const [dragIndex, setDragIndex] = useState(null)
   const [dragMode, setDragMode] = useState(null) // 'point' | 'move' | 'scale'
-  const [scale, setScale] = useState(1)
   const dragState = useRef(null)
 
   // Falls back to a centered default for display only — doesn't push through onChange, so
   // merely viewing an uncalibrated shirt/template never autosaves a quad nobody set.
-  const effectiveQuad = quad ?? (image ? defaultQuad(image.width, image.height) : null)
+  const effectiveQuad = quad ?? (image ? defaultQuad(naturalWidth, naturalHeight) : null)
 
-  useEffect(() => {
-    if (!image || !maxWidth || !maxHeight) return
-    const s = Math.min(maxWidth / image.width, maxHeight / image.height, 1)
-    setScale(s)
-  }, [image, maxWidth, maxHeight])
+  const scale = image && maxWidth && maxHeight ? Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight, 1) : null
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !image || !effectiveQuad) return
-    canvas.width = image.width * scale
-    canvas.height = image.height * scale
+    if (!canvas || !image || !effectiveQuad || !scale) return
+    canvas.width = naturalWidth * scale
+    canvas.height = naturalHeight * scale
     const ctx = canvas.getContext('2d')
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
@@ -79,7 +79,7 @@ export default function QuadEditor({
   }
 
   function handlePointerDown(e) {
-    if (readOnly || !effectiveQuad || !image) return
+    if (readOnly || !effectiveQuad || !image || !scale) return
     const pos = getPos(e)
     const hitRadius = HANDLE_RADIUS / scale + 4
     const idx = effectiveQuad.findIndex((p) => Math.hypot(p.x - pos.x, p.y - pos.y) <= hitRadius)
@@ -108,8 +108,8 @@ export default function QuadEditor({
     const pos = getPos(e)
 
     if (drag.mode === 'point') {
-      const clampedX = Math.max(0, Math.min(image.width, pos.x))
-      const clampedY = Math.max(0, Math.min(image.height, pos.y))
+      const clampedX = Math.max(0, Math.min(naturalWidth, pos.x))
+      const clampedY = Math.max(0, Math.min(naturalHeight, pos.y))
       const next = effectiveQuad.map((p, i) =>
         i === drag.cornerIndex ? { x: clampedX, y: clampedY } : p
       )
@@ -152,7 +152,7 @@ export default function QuadEditor({
 
   function handleSquareUp() {
     if (!effectiveQuad || !image) return
-    const base = defaultQuad(image.width, image.height)
+    const base = defaultQuad(naturalWidth, naturalHeight)
     const weights = effectiveQuad.map((p, i) =>
       Math.hypot(p.x - base[i].x, p.y - base[i].y) > TOUCH_EPSILON ? TOUCHED_WEIGHT : UNTOUCHED_WEIGHT
     )

@@ -12,12 +12,14 @@ import { composeShirtPreview } from '../lib/warp.js'
 import { loadImageData } from '../lib/loadImage.js'
 import { SHIRT_THUMB_DIM, loadShirtThumbnail } from '../lib/shirtThumbnails.js'
 import { runWithConcurrency } from '../lib/runWithConcurrency.js'
+import { useIncrementalCount } from '../lib/useIncrementalCount.js'
 import { rectToQuad } from '../lib/homography.js'
 import { calibratedShirtsFor } from '../lib/setupStatus.js'
 
 const PREVIEW_CONCURRENCY = 3
 const PREVIEW_DEBOUNCE = 80
 const PRELOAD_MARGIN = '600px 0px'
+const GRID_PAGE_SIZE = 60
 const NO_TAGS = []
 
 export default function ExportGrid({
@@ -43,7 +45,7 @@ export default function ExportGrid({
   const [previews, setPreviews] = useState({})
   const [renderingCount, setRenderingCount] = useState(0)
   const [nearView, setNearView] = useState(() => new Set())
-  const [selected, setSelected] = useState(() => new Set(calibratedShirts))
+  const [selected, setSelected] = useState(() => new Set())
   const [exportPayload, setExportPayload] = useState(null)
   const [lastExport, setLastExport] = useState(null)
   const previewsRef = useRef(previews)
@@ -80,9 +82,12 @@ export default function ExportGrid({
   useEffect(() => () => observerRef.current?.disconnect(), [])
 
   useEffect(() => {
-    setSelected(new Set(calibratedShirts))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calibratedShirts.join('|')])
+    const available = new Set(calibratedShirts)
+    setSelected((prev) => {
+      const kept = [...prev].filter((f) => available.has(f))
+      return kept.length === prev.size ? prev : new Set(kept)
+    })
+  }, [calibratedShirts])
 
   const visibleShirts = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -98,6 +103,11 @@ export default function ExportGrid({
       )
     })
   }, [calibratedShirts, search, shirtsConfig])
+
+  const { shown, hasMore, sentinelRef } = useIncrementalCount(visibleShirts.length, {
+    pageSize: GRID_PAGE_SIZE,
+    resetKey: search
+  })
 
   useEffect(() => {
     if (!active || !design || !transform || !templateQuad) return
@@ -288,7 +298,7 @@ export default function ExportGrid({
       )}
 
       <div className="export-grid">
-        {visibleShirts.map((filename, i) => (
+        {visibleShirts.slice(0, shown).map((filename, i) => (
           <ExportCard
             key={filename}
             filename={filename}
@@ -302,6 +312,7 @@ export default function ExportGrid({
           />
         ))}
       </div>
+      {hasMore && <div ref={sentinelRef} className="list-sentinel" />}
 
       {visibleShirts.length === 0 && <p className="hint">No shirts match “{search}”.</p>}
     </div>

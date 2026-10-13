@@ -344,6 +344,8 @@ export function EmbroideredSprig({ variant = 'forgetMeNot' }) {
   )
 }
 
+export const NEEDLE_CYCLE_MS = 1400
+
 export function EmbroideringNeedle() {
   return (
     <div className="embroidering">
@@ -355,7 +357,7 @@ export function EmbroideringNeedle() {
         viewBox="0 0 60 60"
         aria-hidden="true"
         animate={{ x: [0, -6, 2, -4, 0], y: [0, 8, 2, 10, 0] }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: NEEDLE_CYCLE_MS / 1000, repeat: Infinity, ease: 'easeInOut' }}
       >
         <path d="M8 52 L48 12" stroke="var(--ink-soft)" strokeWidth="2.6" strokeLinecap="round" />
         <ellipse cx="44" cy="16" rx="1.2" ry="2.8" transform="rotate(45 44 16)" fill="var(--linen)" />

@@ -10,7 +10,8 @@ import SetupChecklist from '../components/SetupChecklist.jsx'
 import { ArrowIcon, UploadIcon } from '../components/ornaments.jsx'
 import { EmbroideredHoop, EmbroideredSprig } from '../components/embroidery.jsx'
 import { composeShirtPreview } from '../lib/warp.js'
-import { loadImageData, loadImageElement } from '../lib/loadImage.js'
+import { loadImageData } from '../lib/loadImage.js'
+import { loadShirtThumbnail } from '../lib/shirtThumbnails.js'
 import { calibratedShirtsFor } from '../lib/setupStatus.js'
 
 function readFileAsDesign(file) {
@@ -21,6 +22,9 @@ function readFileAsDesign(file) {
     reader.readAsDataURL(file)
   })
 }
+
+const PREVIEW_DIM = 720
+const SHIRT_SWAP_SECONDS = 0.18
 
 export default function DesignPlacement({
   templateSrcs,
@@ -43,7 +47,8 @@ export default function DesignPlacement({
     [shirtFiles, shirtsConfig, side]
   )
   const [previewShirt, setPreviewShirt] = useState(null)
-  const [previewSrc, setPreviewSrc] = useState(null)
+  const [preview, setPreview] = useState(null)
+  const designImageData = useMemo(() => design && loadImageData(design.dataUrl), [design])
 
   useEffect(() => {
     if ((!previewShirt || !calibratedShirts.includes(previewShirt)) && calibratedShirts.length > 0) {
@@ -71,23 +76,30 @@ export default function DesignPlacement({
     async function run() {
       const shirtQuad = shirtsConfig[previewShirt]?.quad
       if (!design || !transform || !shirtQuad || !templateQuad) {
-        setPreviewSrc(null)
+        setPreview(null)
         return
       }
-      const [shirtImage, sourceImageData] = await Promise.all([
-        window.api.getShirtImage(previewShirt).then(loadImageElement),
-        loadImageData(design.dataUrl)
+      const [{ bitmap, scale }, sourceImageData] = await Promise.all([
+        loadShirtThumbnail(previewShirt, PREVIEW_DIM),
+        designImageData
       ])
       if (cancelled) return
-      const src = composeShirtPreview({ shirtImage, sourceImageData, transform, templateQuad, shirtQuad })
-      if (!cancelled) setPreviewSrc(src)
+      const src = composeShirtPreview({
+        shirtImage: bitmap,
+        sourceImageData,
+        transform,
+        templateQuad,
+        shirtQuad,
+        scale
+      })
+      if (!cancelled) setPreview({ shirt: previewShirt, src })
     }
     const timer = setTimeout(run, 60)
     return () => {
       cancelled = true
       clearTimeout(timer)
     }
-  }, [design, transform, previewShirt, templateQuad, shirtsConfig])
+  }, [design, designImageData, transform, previewShirt, templateQuad, shirtsConfig])
 
   const header = (
     <ScreenHeader
@@ -189,21 +201,21 @@ export default function DesignPlacement({
             <div className="preview-pane paper-card">
               <div className="preview-frame">
                 <AnimatePresence>
-                  {previewSrc && (
+                  {preview && (
                     <motion.img
-                      key={previewShirt}
+                      key={preview.shirt}
                       className="preview-image"
-                      src={previewSrc}
-                      alt={`Preview on ${shirtsConfig[previewShirt]?.name ?? previewShirt}`}
-                      initial={{ opacity: 0, filter: 'blur(6px)' }}
-                      animate={{ opacity: 1, filter: 'blur(0px)' }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
+                      src={preview.src}
+                      alt={`Preview on ${shirtsConfig[preview.shirt]?.name ?? preview.shirt}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 1, transition: { duration: SHIRT_SWAP_SECONDS } }}
+                      transition={{ duration: SHIRT_SWAP_SECONDS }}
                     />
                   )}
                 </AnimatePresence>
               </div>
-              <span className="preview-caption">{shirtsConfig[previewShirt]?.name ?? previewShirt}</span>
+              <span className="preview-caption">{shirtsConfig[preview?.shirt ?? previewShirt]?.name ?? preview?.shirt ?? previewShirt}</span>
               <Filmstrip
                 shirts={calibratedShirts}
                 shirtsConfig={shirtsConfig}

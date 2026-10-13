@@ -1,7 +1,8 @@
 import { ipcMain, app, dialog, shell } from 'electron'
-import { readFile, writeFile, mkdir, readdir, copyFile, unlink } from 'node:fs/promises'
+import { readFile, writeFile, mkdir, readdir, copyFile, unlink, stat, rename } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, extname, basename } from 'node:path'
+import { createHash } from 'node:crypto'
 import { exportDesignToAllShirts } from './exporter.js'
 
 // Everything mutable (config, shirt photos, templates) lives under Electron's userData
@@ -16,6 +17,7 @@ const TEMPLATE_PATHS = {
   back: join(DATA_ROOT, 'assets/back-template.png')
 }
 const SHIRTS_DIR = join(DATA_ROOT, 'shirts/images')
+const THUMBS_DIR = join(DATA_ROOT, 'thumbs')
 const CONFIG_DIR = join(DATA_ROOT, 'config')
 const TEMPLATE_CONFIG_PATH = join(CONFIG_DIR, 'template.json')
 const SHIRTS_CONFIG_PATH = join(CONFIG_DIR, 'shirts.json')
@@ -54,6 +56,50 @@ export async function initDataDirs() {
 
   if (!existsSync(CONFIG_DIR)) await mkdir(CONFIG_DIR, { recursive: true })
   if (!existsSync(SHIRTS_DIR)) await mkdir(SHIRTS_DIR, { recursive: true })
+}
+
+const THUMB_HEADER_BYTES = 16
+
+function thumbPrefix(filename) {
+  return createHash('sha1').update(filename).digest('hex').slice(0, 16)
+}
+
+async function thumbPathFor(filename, maxDim) {
+  const { mtimeMs, size } = await stat(join(SHIRTS_DIR, filename))
+  return join(THUMBS_DIR, `${thumbPrefix(filename)}-${maxDim}-${Math.round(mtimeMs)}-${size}.v2.thumb`)
+}
+
+// Layout: float64 scale (thumbnail size relative to the original), uint32 original width, uint32 original height, then the encoded image.
+async function readCachedThumbnail(filename, maxDim) {
+  try {
+    const file = await readFile(await thumbPathFor(filename, maxDim))
+    return {
+      scale: file.readDoubleLE(0),
+      width: file.readUInt32LE(8),
+      height: file.readUInt32LE(12),
+      bytes: file.subarray(THUMB_HEADER_BYTES)
+    }
+  } catch {
+    return null
+  }
+}
+
+async function writeCachedThumbnail(filename, maxDim, { scale, width, height }, bytes) {
+  const path = await thumbPathFor(filename, maxDim)
+  const header = Buffer.alloc(THUMB_HEADER_BYTES)
+  header.writeDoubleLE(scale, 0)
+  header.writeUInt32LE(width, 8)
+  header.writeUInt32LE(height, 12)
+  await mkdir(THUMBS_DIR, { recursive: true })
+  const tempPath = `${path}.tmp`
+  await writeFile(tempPath, Buffer.concat([header, Buffer.from(bytes)]))
+  await rename(tempPath, path)
+}
+
+async function removeCachedThumbnails(filename) {
+  const prefix = `${thumbPrefix(filename)}-`
+  const names = await readdir(THUMBS_DIR).catch(() => [])
+  await Promise.all(names.filter((n) => n.startsWith(prefix)).map((n) => unlink(join(THUMBS_DIR, n)).catch(() => {})))
 }
 
 async function readJson(path, fallback) {
@@ -143,6 +189,7 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('delete-shirt-image', async (_e, filename) => {
     await unlink(join(SHIRTS_DIR, filename)).catch(() => {})
+    await removeCachedThumbnails(filename)
     const shirts = normalizeShirtsConfig(await readJson(SHIRTS_CONFIG_PATH, {}))
     delete shirts[filename]
     await mkdir(CONFIG_DIR, { recursive: true })
@@ -159,6 +206,14 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('get-shirt-image-bytes', async (_e, filename) =>
     readFile(join(SHIRTS_DIR, filename))
+  )
+
+  ipcMain.handle('get-cached-shirt-thumbnail', async (_e, filename, maxDim) =>
+    readCachedThumbnail(filename, maxDim)
+  )
+
+  ipcMain.handle('save-shirt-thumbnail', async (_e, filename, maxDim, meta, bytes) =>
+    writeCachedThumbnail(filename, maxDim, meta, bytes).catch(() => {})
   )
 
   ipcMain.handle('load-config', async () => {
