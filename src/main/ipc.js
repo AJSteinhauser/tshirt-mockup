@@ -1,4 +1,4 @@
-import { ipcMain, app, dialog, BrowserWindow } from 'electron'
+import { ipcMain, app, dialog, shell } from 'electron'
 import { readFile, writeFile, mkdir, readdir, copyFile, unlink } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { join, extname, basename } from 'node:path'
@@ -116,6 +116,15 @@ async function uniqueShirtFilename(desiredName) {
   return candidate
 }
 
+async function importShirtFiles(paths) {
+  await mkdir(SHIRTS_DIR, { recursive: true })
+  for (const srcPath of paths.filter((p) => /\.(png|jpg|jpeg)$/i.test(p))) {
+    const destName = await uniqueShirtFilename(basename(srcPath))
+    await copyFile(srcPath, join(SHIRTS_DIR, destName))
+  }
+  return listShirtFiles()
+}
+
 export function registerIpcHandlers() {
   ipcMain.handle('list-shirt-images', async () => listShirtFiles())
 
@@ -124,37 +133,20 @@ export function registerIpcHandlers() {
       properties: ['openFile', 'multiSelections'],
       filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }]
     })
-    if (result.canceled || result.filePaths.length === 0) return listShirtFiles()
-
-    if (!existsSync(SHIRTS_DIR)) await mkdir(SHIRTS_DIR, { recursive: true })
-
-    for (const srcPath of result.filePaths) {
-      const destName = await uniqueShirtFilename(basename(srcPath))
-      await copyFile(srcPath, join(SHIRTS_DIR, destName))
-    }
-
-    return listShirtFiles()
+    if (result.canceled) return listShirtFiles()
+    return importShirtFiles(result.filePaths)
   })
 
-  ipcMain.handle('delete-shirt-image', async (_e, filename) => {
-    const win = BrowserWindow.getFocusedWindow()
-    const { response } = await dialog.showMessageBox(win, {
-      type: 'warning',
-      buttons: ['Cancel', 'Delete'],
-      defaultId: 0,
-      cancelId: 0,
-      message: `Delete "${filename}"?`,
-      detail: 'This removes the image file and its calibration data. This cannot be undone.'
-    })
-    if (response !== 1) return { deleted: false, files: await listShirtFiles() }
+  ipcMain.handle('import-shirt-images', async (_e, paths) => importShirtFiles(paths))
 
+  ipcMain.handle('delete-shirt-image', async (_e, filename) => {
     await unlink(join(SHIRTS_DIR, filename)).catch(() => {})
     const shirts = normalizeShirtsConfig(await readJson(SHIRTS_CONFIG_PATH, {}))
     delete shirts[filename]
     await mkdir(CONFIG_DIR, { recursive: true })
     await writeFile(SHIRTS_CONFIG_PATH, JSON.stringify(shirts, null, 2))
 
-    return { deleted: true, files: await listShirtFiles(), shirts }
+    return { files: await listShirtFiles(), shirts }
   })
 
   ipcMain.handle('get-template-image', async (_e, side) => fileToDataUrl(TEMPLATE_PATHS[side]))
@@ -202,6 +194,8 @@ export function registerIpcHandlers() {
     const name = path.split('/').pop().replace(/\.[^.]+$/, '')
     return { name, dataUrl: await fileToDataUrl(path) }
   })
+
+  ipcMain.handle('reveal-in-finder', async (_e, path) => shell.openPath(path))
 
   ipcMain.handle('export-all', async (_e, payload) => {
     return exportDesignToAllShirts({

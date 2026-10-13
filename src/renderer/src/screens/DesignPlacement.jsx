@@ -1,8 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import TransformLayer from '../components/TransformLayer.jsx'
-import { computeHomography, applyHomography, rectToQuad } from '../lib/homography.js'
-import { warpImageIntoQuad } from '../lib/warp.js'
-import { loadImageElement } from '../lib/loadImage.js'
+import ScreenHeader from '../components/ScreenHeader.jsx'
+import SideToggle from '../components/SideToggle.jsx'
+import DropZone from '../components/DropZone.jsx'
+import Filmstrip from '../components/Filmstrip.jsx'
+import NoticeCard from '../components/NoticeCard.jsx'
+import SetupChecklist from '../components/SetupChecklist.jsx'
+import { ArrowIcon, ScissorsIcon, SprigIcon, UploadIcon } from '../components/ornaments.jsx'
+import { composeShirtPreview } from '../lib/warp.js'
+import { loadImageData, loadImageElement } from '../lib/loadImage.js'
+import { calibratedShirtsFor } from '../lib/setupStatus.js'
+
+function readFileAsDesign(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve({ name: file.name.replace(/\.[^.]+$/, ''), dataUrl: reader.result })
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
 
 export default function DesignPlacement({
   templateSrcs,
@@ -10,6 +27,8 @@ export default function DesignPlacement({
   shirtFiles,
   shirtsConfig,
   side,
+  onSideChange,
+  onNavigate,
   design,
   setDesign,
   transform,
@@ -19,7 +38,7 @@ export default function DesignPlacement({
   const templateQuad = templateQuads[side]
 
   const calibratedShirts = useMemo(
-    () => shirtFiles.filter((f) => shirtsConfig[f]?.quad && (shirtsConfig[f]?.side ?? 'front') === side),
+    () => calibratedShirtsFor(side, shirtFiles, shirtsConfig),
     [shirtFiles, shirtsConfig, side]
   )
   const [previewShirt, setPreviewShirt] = useState(null)
@@ -32,57 +51,35 @@ export default function DesignPlacement({
     if (calibratedShirts.length === 0) setPreviewShirt(null)
   }, [calibratedShirts, previewShirt])
 
-  async function handleUpload() {
+  function applyDesign(picked) {
+    setDesign(picked)
+    setTransform(null)
+  }
+
+  async function handleBrowse() {
     const picked = await window.api.pickDesignImage()
-    if (picked) {
-      setDesign(picked)
-      setTransform(null)
-    }
+    if (picked) applyDesign(picked)
+  }
+
+  async function handleDrop([file]) {
+    applyDesign(await readFileAsDesign(file))
   }
 
   useEffect(() => {
     let cancelled = false
     async function run() {
-      if (!design || !transform || !previewShirt || !templateQuad) {
+      const shirtQuad = shirtsConfig[previewShirt]?.quad
+      if (!design || !transform || !shirtQuad || !templateQuad) {
         setPreviewSrc(null)
         return
       }
-      const shirtEntry = shirtsConfig[previewShirt]
-      if (!shirtEntry?.quad) return
-
-      const [shirtImg, designImg] = await Promise.all([
+      const [shirtImage, sourceImageData] = await Promise.all([
         window.api.getShirtImage(previewShirt).then(loadImageElement),
-        loadImageElement(design.dataUrl)
+        loadImageData(design.dataUrl)
       ])
       if (cancelled) return
-
-      const canvas = document.createElement('canvas')
-      canvas.width = shirtImg.width
-      canvas.height = shirtImg.height
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(shirtImg, 0, 0)
-
-      const designCanvas = document.createElement('canvas')
-      designCanvas.width = designImg.width
-      designCanvas.height = designImg.height
-      const designCtx = designCanvas.getContext('2d')
-      designCtx.drawImage(designImg, 0, 0)
-      const sourceImageData = designCtx.getImageData(0, 0, designImg.width, designImg.height)
-
-      const designCorners = rectToQuad(transform)
-      const templateToShirt = computeHomography(templateQuad, shirtEntry.quad)
-      const dstQuad = designCorners.map((p) => applyHomography(templateToShirt, p))
-
-      warpImageIntoQuad({
-        destCtx: ctx,
-        destWidth: canvas.width,
-        destHeight: canvas.height,
-        sourceImageData,
-        dstQuad,
-        clipQuad: shirtEntry.quad
-      })
-
-      if (!cancelled) setPreviewSrc(canvas.toDataURL('image/png'))
+      const src = composeShirtPreview({ shirtImage, sourceImageData, transform, templateQuad, shirtQuad })
+      if (!cancelled) setPreviewSrc(src)
     }
     const timer = setTimeout(run, 60)
     return () => {
@@ -91,27 +88,90 @@ export default function DesignPlacement({
     }
   }, [design, transform, previewShirt, templateQuad, shirtsConfig])
 
+  const header = (
+    <ScreenHeader
+      eyebrow="Studio · Arrange"
+      title={design ? design.name : `Place a ${side} design`}
+      hint={
+        design
+          ? 'Drag to move · corner to scale · top handle to rotate. Anything past the stitched line gets trimmed.'
+          : 'Position it once on the template and it lands on every calibrated mockup.'
+      }
+    >
+      <SideToggle value={side} onChange={onSideChange} />
+    </ScreenHeader>
+  )
+
+  if (!templateQuad || calibratedShirts.length === 0) {
+    return (
+      <div className="screen">
+        {header}
+        <NoticeCard icon={<SprigIcon size={28} />} title={`Let’s ready the ${side} side first`}>
+          <p>A few one-time steps in the Workroom, then this is where every new design starts.</p>
+          <SetupChecklist
+            steps={[
+              {
+                title: `Mark the ${side} print area`,
+                detail: 'Outline where a design is allowed on the flat template.',
+                done: Boolean(templateQuad),
+                action: (
+                  <button className="btn btn-small" onClick={() => onNavigate('template')}>
+                    Open template
+                  </button>
+                )
+              },
+              {
+                title: 'Add mockup photos',
+                detail: 'Lifestyle shots of your blank shirts.',
+                done: shirtFiles.length > 0,
+                action: (
+                  <button className="btn btn-small" onClick={() => onNavigate('mockups')}>
+                    Add mockups
+                  </button>
+                )
+              },
+              {
+                title: `Calibrate a ${side} mockup`,
+                detail: 'Match each photo to the template’s print area.',
+                done: calibratedShirts.length > 0,
+                action: (
+                  <button className="btn btn-small" onClick={() => onNavigate('mockups')}>
+                    Calibrate
+                  </button>
+                )
+              }
+            ]}
+          />
+        </NoticeCard>
+      </div>
+    )
+  }
+
   return (
     <div className="screen">
-      <h2>3. Design Placement — {side}</h2>
-      <p className="hint">
-        Drag to move, corner to scale, top handle to rotate. Dashed line = print area — content
-        outside it gets cropped.
-      </p>
+      {header}
 
-      {!templateQuad ? (
-        <p className="hint">Set the {side} reference area in Template Setup first.</p>
-      ) : calibratedShirts.length === 0 ? (
-        <p className="hint">Calibrate at least one {side} shirt before placing a design.</p>
-      ) : (
-        <>
-          <div className="actions">
-            <button onClick={handleUpload}>{design ? 'Change design' : 'Upload design'}</button>
-            {design && <span>{design.name}</span>}
-          </div>
-
-          {design && (
-            <div className="placement-layout">
+      <AnimatePresence mode="wait" initial={false}>
+        {!design ? (
+          <motion.div key="drop" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
+            <DropZone onFiles={handleDrop} className="design-drop">
+              <ScissorsIcon size={36} />
+              <h3>Drop a design here</h3>
+              <p className="hint">PNG with transparency works best.</p>
+              <button className="btn" onClick={handleBrowse}>
+                <UploadIcon size={16} /> Browse files
+              </button>
+            </DropZone>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="workspace"
+            className="placement-layout"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+          >
+            <DropZone onFiles={handleDrop} className="hoop-card placement-canvas">
               <TransformLayer
                 templateSrc={templateSrc}
                 templateQuad={templateQuad}
@@ -119,22 +179,46 @@ export default function DesignPlacement({
                 transform={transform}
                 onChange={setTransform}
               />
-              <div className="preview-pane">
-                <div className="preview-controls">
-                  <label>Preview shirt:</label>
-                  <select value={previewShirt ?? ''} onChange={(e) => setPreviewShirt(e.target.value)}>
-                    {calibratedShirts.map((f) => (
-                      <option key={f} value={f}>
-                        {shirtsConfig[f]?.name ?? f}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {previewSrc && <img className="preview-image" src={previewSrc} alt="preview" />}
+              <button className="btn btn-ghost btn-small" onClick={handleBrowse}>
+                <UploadIcon size={14} /> Swap design
+              </button>
+            </DropZone>
+
+            <div className="preview-pane paper-card">
+              <div className="preview-frame">
+                <AnimatePresence>
+                  {previewSrc && (
+                    <motion.img
+                      key={previewShirt}
+                      className="preview-image"
+                      src={previewSrc}
+                      alt={`Preview on ${shirtsConfig[previewShirt]?.name ?? previewShirt}`}
+                      initial={{ opacity: 0, filter: 'blur(6px)' }}
+                      animate={{ opacity: 1, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </AnimatePresence>
               </div>
+              <span className="preview-caption">{shirtsConfig[previewShirt]?.name ?? previewShirt}</span>
+              <Filmstrip
+                shirts={calibratedShirts}
+                shirtsConfig={shirtsConfig}
+                value={previewShirt}
+                onChange={setPreviewShirt}
+              />
             </div>
-          )}
-        </>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {design && transform && (
+        <div className="screen-footer">
+          <button className="btn btn-primary" onClick={() => onNavigate('gather')}>
+            Gather & export {calibratedShirts.length} mockups <ArrowIcon size={16} />
+          </button>
+        </div>
       )}
     </div>
   )

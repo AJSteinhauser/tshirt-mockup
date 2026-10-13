@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useImage } from '../lib/useImage.js'
 import { rectToQuad, pointInQuad } from '../lib/homography.js'
+import { cssToken, strokeWithHalo } from '../lib/theme.js'
 
 const HANDLE_RADIUS = 9
 const ROTATE_OFFSET = 40
 const MAX_WIDTH = 760
 const MAX_HEIGHT = 640
+const STITCH_DASH = [7, 5]
+const STITCH_SPEED = 0.03
 
 export default function TransformLayer({ templateSrc, templateQuad, designSrc, transform, onChange }) {
   const templateImage = useImage(templateSrc)
@@ -14,6 +17,21 @@ export default function TransformLayer({ templateSrc, templateQuad, designSrc, t
   const [scale, setScale] = useState(1)
   const [mode, setMode] = useState(null) // 'move' | 'scale' | 'rotate'
   const dragState = useRef(null)
+  const [hovering, setHovering] = useState(false)
+  const [dashOffset, setDashOffset] = useState(0)
+  const marching = hovering || Boolean(mode)
+
+  useEffect(() => {
+    if (!marching) return
+    let frame
+    const start = performance.now()
+    const tick = (now) => {
+      setDashOffset(-(now - start) * STITCH_SPEED)
+      frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [marching])
 
   useEffect(() => {
     if (!templateImage) return
@@ -48,14 +66,13 @@ export default function TransformLayer({ templateSrc, templateQuad, designSrc, t
     if (templateQuad) {
       const clipPts = templateQuad.map((p) => ({ x: p.x * scale, y: p.y * scale }))
       ctx.save()
-      ctx.setLineDash([6, 5])
+      ctx.setLineDash(STITCH_DASH)
+      ctx.lineDashOffset = dashOffset
       ctx.beginPath()
       ctx.moveTo(clipPts[0].x, clipPts[0].y)
       for (let i = 1; i < 4; i++) ctx.lineTo(clipPts[i].x, clipPts[i].y)
       ctx.closePath()
-      ctx.strokeStyle = '#ff9800'
-      ctx.lineWidth = 2
-      ctx.stroke()
+      strokeWithHalo(ctx, cssToken('--canvas-print-area'))
       ctx.restore()
     }
 
@@ -87,9 +104,7 @@ export default function TransformLayer({ templateSrc, templateQuad, designSrc, t
     ctx.moveTo(corners[0].x, corners[0].y)
     for (let i = 1; i < 4; i++) ctx.lineTo(corners[i].x, corners[i].y)
     ctx.closePath()
-    ctx.strokeStyle = '#4da3ff'
-    ctx.lineWidth = 2
-    ctx.stroke()
+    strokeWithHalo(ctx, cssToken('--canvas-stroke'))
 
     const rotateHandle = rotateHandlePos(transform)
     const rhScreen = { x: rotateHandle.x * scale, y: rotateHandle.y * scale }
@@ -97,19 +112,18 @@ export default function TransformLayer({ templateSrc, templateQuad, designSrc, t
     ctx.beginPath()
     ctx.moveTo(topMid.x, topMid.y)
     ctx.lineTo(rhScreen.x, rhScreen.y)
-    ctx.strokeStyle = '#4da3ff'
-    ctx.stroke()
+    strokeWithHalo(ctx, cssToken('--canvas-stroke'))
 
     drawHandle(ctx, corners[2], mode === 'scale')
     drawHandle(ctx, rhScreen, mode === 'rotate')
-  }, [templateImage, designImage, transform, scale, mode, templateQuad])
+  }, [templateImage, designImage, transform, scale, mode, templateQuad, dashOffset])
 
   function drawHandle(ctx, p, active) {
     ctx.beginPath()
     ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, Math.PI * 2)
-    ctx.fillStyle = active ? '#ff9800' : '#4da3ff'
+    ctx.fillStyle = active ? cssToken('--canvas-active') : cssToken('--canvas-handle')
     ctx.fill()
-    ctx.strokeStyle = '#fff'
+    ctx.strokeStyle = cssToken('--canvas-ring')
     ctx.lineWidth = 2
     ctx.stroke()
   }
@@ -188,6 +202,8 @@ export default function TransformLayer({ templateSrc, templateQuad, designSrc, t
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerEnter={() => setHovering(true)}
+      onPointerLeave={() => setHovering(false)}
       style={{ cursor: mode ? 'grabbing' : 'default' }}
     />
   )

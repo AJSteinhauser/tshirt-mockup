@@ -1,4 +1,20 @@
+export const SHIRT_THUMB_DIM = 280
+const MAX_CONCURRENT_DECODES = 4
+
 const thumbnailCache = new Map()
+const waitingForSlot = []
+let activeDecodes = 0
+
+async function withDecodeSlot(task) {
+  if (activeDecodes >= MAX_CONCURRENT_DECODES) await new Promise((resolve) => waitingForSlot.push(resolve))
+  activeDecodes += 1
+  try {
+    return await task()
+  } finally {
+    activeDecodes -= 1
+    waitingForSlot.shift()?.()
+  }
+}
 
 async function createThumbnail(filename, maxDim) {
   const bytes = await window.api.getShirtImageBytes(filename)
@@ -16,7 +32,7 @@ async function createThumbnail(filename, maxDim) {
 export function loadShirtThumbnail(filename, maxDim) {
   const key = `${filename}@${maxDim}`
   if (!thumbnailCache.has(key)) {
-    const promise = createThumbnail(filename, maxDim)
+    const promise = withDecodeSlot(() => createThumbnail(filename, maxDim))
     promise.catch(() => thumbnailCache.delete(key))
     thumbnailCache.set(key, promise)
   }

@@ -6,3 +6,13 @@ export function loadImageElement(src) {
     img.src = src
   })
 }
+
+export async function loadImageData(src) {
+  const img = await loadImageElement(src)
+  const canvas = document.createElement('canvas')
+  canvas.width = img.width
+  canvas.height = img.height
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(img, 0, 0)
+  return ctx.getImageData(0, 0, img.width, img.height)
+}

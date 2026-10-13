@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useImage } from '../lib/useImage.js'
 import { defaultQuad, squareUpQuad, pointInQuad } from '../lib/homography.js'
+import { cssToken, strokeWithHalo } from '../lib/theme.js'
 
 const HANDLE_RADIUS = 9
 const DEFAULT_MAX_WIDTH = 760
@@ -30,7 +31,7 @@ export default function QuadEditor({
   const effectiveQuad = quad ?? (image ? defaultQuad(image.width, image.height) : null)
 
   useEffect(() => {
-    if (!image) return
+    if (!image || !maxWidth || !maxHeight) return
     const s = Math.min(maxWidth / image.width, maxHeight / image.height, 1)
     setScale(s)
   }, [image, maxWidth, maxHeight])
@@ -50,23 +51,23 @@ export default function QuadEditor({
     ctx.moveTo(pts[0].x, pts[0].y)
     for (let i = 1; i < 4; i++) ctx.lineTo(pts[i].x, pts[i].y)
     ctx.closePath()
-    ctx.fillStyle = 'rgba(80, 160, 255, 0.25)'
+    ctx.fillStyle = cssToken('--canvas-fill')
     ctx.fill()
-    ctx.strokeStyle = '#4da3ff'
-    ctx.lineWidth = 2
-    ctx.stroke()
+    ctx.setLineDash([7, 5])
+    strokeWithHalo(ctx, cssToken('--canvas-stroke'))
+    ctx.setLineDash([])
 
     const labels = ['TL', 'TR', 'BR', 'BL']
     pts.forEach((p, i) => {
       ctx.beginPath()
       ctx.arc(p.x, p.y, HANDLE_RADIUS, 0, Math.PI * 2)
-      ctx.fillStyle = dragIndex === i ? '#ff9800' : '#4da3ff'
+      ctx.fillStyle = dragIndex === i ? cssToken('--canvas-active') : cssToken('--canvas-handle')
       ctx.fill()
-      ctx.strokeStyle = '#fff'
+      ctx.strokeStyle = cssToken('--canvas-ring')
       ctx.lineWidth = 2
       ctx.stroke()
-      ctx.fillStyle = '#fff'
-      ctx.font = '10px sans-serif'
+      ctx.fillStyle = cssToken('--canvas-ring')
+      ctx.font = `700 9px ${cssToken('--font-ui')}`
       ctx.textAlign = 'center'
       ctx.fillText(labels[i], p.x, p.y + 3)
     })
@@ -169,7 +170,6 @@ export default function QuadEditor({
 
   return (
     <div className="quad-editor">
-      {label && <div className="quad-editor-label">{label}</div>}
       <canvas
         ref={canvasRef}
         onPointerDown={handlePointerDown}
@@ -177,8 +177,9 @@ export default function QuadEditor({
         onPointerUp={handlePointerUp}
         style={{ cursor: dragMode === 'move' ? 'move' : dragMode ? 'grabbing' : 'default' }}
       />
+      {label && <span className="canvas-chip quad-editor-label">{label}</span>}
       {!readOnly && effectiveQuad && (
-        <button type="button" className="quad-editor-square-btn" onClick={handleSquareUp}>
+        <button type="button" className="canvas-chip quad-editor-square-btn" onClick={handleSquareUp}>
           Square up
         </button>
       )}

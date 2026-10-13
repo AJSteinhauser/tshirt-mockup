@@ -34,10 +34,10 @@
     <li>
       <a href="#usage">Usage</a>
       <ul>
-        <li><a href="#1-template-setup">1. Template Setup</a></li>
-        <li><a href="#2-shirt-calibration">2. Shirt Calibration</a></li>
-        <li><a href="#3-design-placement">3. Design Placement</a></li>
-        <li><a href="#4-export">4. Export</a></li>
+        <li><a href="#workroom-template">Workroom: Template</a></li>
+        <li><a href="#workroom-mockups">Workroom: Mockups</a></li>
+        <li><a href="#studio-arrange">Studio: Arrange</a></li>
+        <li><a href="#studio-gather--export">Studio: Gather &amp; export</a></li>
       </ul>
     </li>
     <li><a href="#where-your-data-lives">Where Your Data Lives</a></li>
@@ -114,29 +114,34 @@ This handles rebuilding the native `canvas` module against Electron's own Node/V
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-The app is a four-step wizard, always visible along the top of the window. A **Front / Back** toggle in the top-right drives steps 1, 3, and 4 — whichever side you're "working on" is the side you're setting up, placing designs onto, and exporting.
+The sidebar splits the app into two rooms:
 
-### 1. Template Setup
+- **Workroom** — one-time setup. Mark the template's print area and calibrate your mockup photos. Badges show how much is done.
+- **Studio** — the everyday loop. Arrange a new design, then gather and export it onto every mockup.
 
-Drag the four corner handles onto your flat reference template to mark the print area — the region every mockup photo's chest print will be calibrated against. Front and back each get their own reference area. Changes save automatically as you drag; **Reset** reverts back to how it looked when you opened that side.
+The app opens in the Studio. If the side you're working on isn't set up yet, it shows a short checklist that links to the right Workroom screen. Each screen has its own **Front / Back** toggle in the top-right.
+
+### Workroom: Template
+
+Drag the four corner handles onto your flat reference template to mark the print area — the region every mockup photo's chest print will be calibrated against. Front and back each get their own reference area. Changes save automatically as you drag; **Undo changes** reverts back to how it looked when you opened that side.
 
 ![Template Setup](docs/screenshots/01-template-setup.png)
 
-### 2. Shirt Calibration
+### Workroom: Mockups
 
-Upload your mockup photos here (or delete ones you no longer need). For each one: pick whether it's a front or back shot, drag its four corners to match the same region you marked on the template, and add any tags you want to filter by later (color, style, whatever's useful). If you've already placed a design in step 3, it's previewed live on top so you can check the fit while you calibrate.
+Add mockup photos with the button or by dropping them onto the list. To remove one, hover it, click **×**, then confirm. For each one: pick whether it's a front or back shot, drag its four corners to match the same region you marked on the template, and add any tags you want to filter by later (color, style, whatever's useful). If you've already arranged a design in the Studio, it's previewed live on top so you can check the fit while you calibrate.
 
 ![Shirt Calibration](docs/screenshots/02-shirt-calibration.png)
 
-### 3. Design Placement
+### Studio: Arrange
 
-Upload a design and position it directly on the template — drag to move, the corner handle to scale, the top handle to rotate. The dashed outline is the print area from step 1: anything outside it gets cropped when it lands on a real shirt, so keep your design inside it. Pick any calibrated mockup from the dropdown to preview the actual warped result before moving on.
+Drop a design onto the page (or browse for one) and position it directly on the template — drag to move, the corner handle to scale, the top handle to rotate. The stitched outline is the print area from the Template screen: anything outside it gets cropped when it lands on a real shirt, so keep your design inside it. Click any calibrated mockup in the filmstrip to preview the actual warped result, then hit **Gather & export**.
 
 ![Design Placement](docs/screenshots/03-design-placement.png)
 
-### 4. Export
+### Studio: Gather & export
 
-Every calibrated mockup for the current side shows up as a live-rendered thumbnail with your design already warped on. Search by tag or name to narrow the list, click thumbnails to include or exclude them (search only affects what's *visible* — your selections elsewhere are untouched), then export. Finished images land in your **Downloads** folder, organized into a subfolder named after the design.
+Every calibrated mockup for the current side shows up as a live-rendered thumbnail with your design already warped on. Search by tag or name to narrow the list, click thumbnails to pin or unpin them (search only affects what's *visible* — your selections elsewhere are untouched), then export. Finished images land in your **Downloads** folder, organized into a subfolder named after the design. **Open folder** jumps straight to it.
 
 ![Export](docs/screenshots/04-export.png)
 

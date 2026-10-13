@@ -1,34 +1,79 @@
-import { useEffect, useMemo, useState } from 'react'
-import { computeHomography, applyHomography, rectToQuad } from '../lib/homography.js'
-import { warpImageIntoQuad } from '../lib/warp.js'
-import { loadImageElement } from '../lib/loadImage.js'
-import { loadShirtThumbnail } from '../lib/shirtThumbnails.js'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import ScreenHeader from '../components/ScreenHeader.jsx'
+import SideToggle from '../components/SideToggle.jsx'
+import NoticeCard from '../components/NoticeCard.jsx'
+import ExportCard from '../components/ExportCard.jsx'
+import { BasketIcon, FolderIcon, ScissorsIcon, SpoolIcon } from '../components/ornaments.jsx'
+import { composeShirtPreview } from '../lib/warp.js'
+import { loadImageData } from '../lib/loadImage.js'
+import { SHIRT_THUMB_DIM, loadShirtThumbnail } from '../lib/shirtThumbnails.js'
 import { runWithConcurrency } from '../lib/runWithConcurrency.js'
+import { rectToQuad } from '../lib/homography.js'
+import { calibratedShirtsFor } from '../lib/setupStatus.js'
 
-const THUMB_MAX_DIM = 280
 const PREVIEW_CONCURRENCY = 3
+const PREVIEW_DEBOUNCE = 80
+const PRELOAD_MARGIN = '600px 0px'
+const NO_TAGS = []
 
 export default function ExportGrid({
+  active,
   templateQuads,
   shirtFiles,
   shirtsConfig,
   side,
+  onSideChange,
+  onNavigate,
   design,
   transform
 }) {
   const templateQuad = templateQuads[side]
 
   const calibratedShirts = useMemo(
-    () => shirtFiles.filter((f) => shirtsConfig[f]?.quad && (shirtsConfig[f]?.side ?? 'front') === side),
+    () => calibratedShirtsFor(side, shirtFiles, shirtsConfig),
     [shirtFiles, shirtsConfig, side]
   )
 
   const [search, setSearch] = useState('')
   const [previews, setPreviews] = useState({})
-  const [loadingPreviews, setLoadingPreviews] = useState(false)
+  const [renderingCount, setRenderingCount] = useState(0)
+  const [nearView, setNearView] = useState(() => new Set())
   const [selected, setSelected] = useState(() => new Set(calibratedShirts))
   const [exporting, setExporting] = useState(false)
   const [exportResult, setExportResult] = useState(null)
+  const previewsRef = useRef(previews)
+  previewsRef.current = previews
+  const inFlight = useRef(new Map())
+  const observerRef = useRef(null)
+
+  const previewKey = useMemo(() => ({}), [design, transform, templateQuad, shirtsConfig])
+  const latestPreviewKey = useRef(previewKey)
+  latestPreviewKey.current = previewKey
+  const designImageData = useMemo(() => design && loadImageData(design.dataUrl), [design])
+
+  const observe = useCallback((el) => {
+    if (!el) return
+    if (!observerRef.current) {
+      observerRef.current = new IntersectionObserver(
+        (entries) =>
+          setNearView((prev) => {
+            const next = new Set(prev)
+            for (const entry of entries) {
+              if (entry.isIntersecting) next.add(entry.target.dataset.filename)
+              else next.delete(entry.target.dataset.filename)
+            }
+            return next
+          }),
+        { root: el.closest('main'), rootMargin: PRELOAD_MARGIN }
+      )
+    }
+    const observer = observerRef.current
+    observer.observe(el)
+    return () => observer.unobserve(el)
+  }, [])
+
+  useEffect(() => () => observerRef.current?.disconnect(), [])
 
   useEffect(() => {
     setSelected(new Set(calibratedShirts))
@@ -51,74 +96,57 @@ export default function ExportGrid({
   }, [calibratedShirts, search, shirtsConfig])
 
   useEffect(() => {
-    let cancelled = false
-    async function run() {
-      if (!design || !transform || !templateQuad || calibratedShirts.length === 0) {
-        setPreviews({})
-        return
-      }
-      setLoadingPreviews(true)
+    if (!active || !design || !transform || !templateQuad) return
+    let stopped = false
+    const timer = setTimeout(() => {
+      const order = new Map(calibratedShirts.map((f, i) => [f, i]))
+      const due = [...nearView]
+        .filter((f) => order.has(f))
+        .filter((f) => previewsRef.current[f]?.key !== previewKey && inFlight.current.get(f) !== previewKey)
+        .sort((x, y) => order.get(x) - order.get(y))
 
-      const designImg = await loadImageElement(design.dataUrl)
-      const designCanvas = document.createElement('canvas')
-      designCanvas.width = designImg.width
-      designCanvas.height = designImg.height
-      const designCtx = designCanvas.getContext('2d')
-      designCtx.drawImage(designImg, 0, 0)
-      const sourceImageData = designCtx.getImageData(0, 0, designImg.width, designImg.height)
-      const designCorners = rectToQuad(transform)
-
-      await runWithConcurrency(calibratedShirts, PREVIEW_CONCURRENCY, async (filename) => {
-        if (cancelled) return
-        const shirtEntry = shirtsConfig[filename]
+      runWithConcurrency(due, PREVIEW_CONCURRENCY, async (filename) => {
+        if (stopped) return
+        inFlight.current.set(filename, previewKey)
+        setRenderingCount((n) => n + 1)
         try {
-          const { bitmap, scale } = await loadShirtThumbnail(filename, THUMB_MAX_DIM)
-          if (cancelled) return
-
-          const canvas = document.createElement('canvas')
-          canvas.width = bitmap.width
-          canvas.height = bitmap.height
-          const ctx = canvas.getContext('2d')
-          ctx.drawImage(bitmap, 0, 0)
-
-          const templateToShirt = computeHomography(templateQuad, shirtEntry.quad)
-          const dstQuad = designCorners
-            .map((p) => applyHomography(templateToShirt, p))
-            .map((p) => ({ x: p.x * scale, y: p.y * scale }))
-          const clipQuad = shirtEntry.quad.map((p) => ({ x: p.x * scale, y: p.y * scale }))
-
-          warpImageIntoQuad({
-            destCtx: ctx,
-            destWidth: canvas.width,
-            destHeight: canvas.height,
+          const [{ bitmap, scale }, sourceImageData] = await Promise.all([
+            loadShirtThumbnail(filename, SHIRT_THUMB_DIM),
+            designImageData
+          ])
+          if (latestPreviewKey.current !== previewKey) return
+          const src = composeShirtPreview({
+            shirtImage: bitmap,
             sourceImageData,
-            dstQuad,
-            clipQuad
+            transform,
+            templateQuad,
+            shirtQuad: shirtsConfig[filename].quad,
+            scale
           })
-
-          const previewSrc = canvas.toDataURL('image/png')
-          if (!cancelled) setPreviews((prev) => ({ ...prev, [filename]: previewSrc }))
+          setPreviews((prev) => ({ ...prev, [filename]: { src, key: previewKey } }))
         } catch (err) {
           console.error(`Preview failed for ${filename}`, err)
+        } finally {
+          if (inFlight.current.get(filename) === previewKey) inFlight.current.delete(filename)
+          setRenderingCount((n) => n - 1)
         }
       })
-
-      if (!cancelled) setLoadingPreviews(false)
-    }
-    run()
+    }, PREVIEW_DEBOUNCE)
     return () => {
-      cancelled = true
+      stopped = true
+      clearTimeout(timer)
     }
-  }, [design, transform, templateQuad, shirtsConfig, calibratedShirts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, previewKey, nearView, calibratedShirts])
 
-  function toggle(filename) {
+  const toggle = useCallback((filename) => {
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(filename)) next.delete(filename)
       else next.add(filename)
       return next
     })
-  }
+  }, [])
 
   function selectAllVisible() {
     setSelected((prev) => new Set([...prev, ...visibleShirts]))
@@ -136,12 +164,11 @@ export default function ExportGrid({
     if (!design || !transform || !templateQuad || selected.size === 0) return
     setExporting(true)
     setExportResult(null)
-    const designCorners = rectToQuad(transform)
     const result = await window.api.exportAll({
       designName: design.name,
       designDataUrl: design.dataUrl,
       templateQuads,
-      designCorners,
+      designCorners: rectToQuad(transform),
       selectedFilenames: Array.from(selected)
     })
     setExportResult(result)
@@ -150,85 +177,132 @@ export default function ExportGrid({
 
   const allVisibleSelected = visibleShirts.length > 0 && visibleShirts.every((f) => selected.has(f))
   const noneVisibleSelected = visibleShirts.every((f) => !selected.has(f))
+  const failures = exportResult?.results.filter((r) => !r.ok) ?? []
+  const successCount = exportResult ? exportResult.results.length - failures.length : 0
+
+  const header = (
+    <ScreenHeader
+      eyebrow="Studio · Gather & export"
+      title={design ? `Gather “${design.name}”` : 'Gather & export'}
+      hint={
+        design &&
+        `Tap a shirt to pin or unpin it. ${selected.size} of ${calibratedShirts.length} pinned${
+          search ? ` · ${visibleShirts.length} shown` : ''
+        }.`
+      }
+    >
+      <SideToggle value={side} onChange={onSideChange} />
+    </ScreenHeader>
+  )
+
+  if (!design || !transform) {
+    return (
+      <div className="screen">
+        {header}
+        <NoticeCard
+          icon={<BasketIcon size={28} />}
+          title="The basket’s empty"
+          action={
+            <button className="btn btn-primary" onClick={() => onNavigate('arrange')}>
+              <ScissorsIcon size={16} /> Arrange a {side} design
+            </button>
+          }
+        >
+          <p>Place a design on the {side} template first, then come back to gather every mockup.</p>
+        </NoticeCard>
+      </div>
+    )
+  }
 
   return (
     <div className="screen">
-      <h2>4. Export — {side}</h2>
+      {header}
 
-      {!design || !transform ? (
-        <p className="hint">Place a {side} design on the template first.</p>
-      ) : (
-        <>
-          <p className="hint">
-            Click a shirt to include or exclude it, then export. {selected.size}/
-            {calibratedShirts.length} selected
-            {search && ` (${visibleShirts.length} shown)`}.
-          </p>
-          <div className="actions">
-            <input
-              className="search-input"
-              placeholder="search tags or name…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button onClick={selectAllVisible} disabled={allVisibleSelected}>
-              Select all visible
-            </button>
-            <button onClick={selectNoneVisible} disabled={noneVisibleSelected}>
-              Select none visible
-            </button>
-            <button onClick={handleExport} disabled={exporting || selected.size === 0}>
-              {exporting ? 'Exporting…' : `Export selected (${selected.size})`}
-            </button>
-            {loadingPreviews && <span className="hint">rendering previews…</span>}
-          </div>
-
-          <div className="export-grid">
-            {visibleShirts.map((filename) => (
-              <button
-                key={filename}
-                className={`export-card ${selected.has(filename) ? 'selected' : ''}`}
-                onClick={() => toggle(filename)}
-              >
-                <span className="export-card-check">{selected.has(filename) ? '✓' : ''}</span>
-                {previews[filename] ? (
-                  <img src={previews[filename]} alt={filename} />
-                ) : (
-                  <div className="export-card-placeholder" />
-                )}
-                <span className="export-card-label">{shirtsConfig[filename]?.name ?? filename}</span>
-                {(shirtsConfig[filename]?.tags ?? []).length > 0 && (
-                  <span className="export-card-tags">
-                    {shirtsConfig[filename].tags.join(', ')}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {visibleShirts.length === 0 && (
-            <p className="hint">No shirts match “{search}”.</p>
+      <div className="toolbar">
+        <input
+          className="search-input"
+          placeholder="Search names or tags…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button className="btn btn-ghost" onClick={selectAllVisible} disabled={allVisibleSelected}>
+          Pin all
+        </button>
+        <button className="btn btn-ghost" onClick={selectNoneVisible} disabled={noneVisibleSelected}>
+          Unpin all
+        </button>
+        <AnimatePresence>
+          {renderingCount > 0 && (
+            <motion.span className="toolbar-status" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <SpoolIcon size={16} className="spin" /> stitching previews…
+            </motion.span>
           )}
-        </>
-      )}
+        </AnimatePresence>
+        <button
+          className="btn btn-primary toolbar-export"
+          onClick={handleExport}
+          disabled={exporting || selected.size === 0}
+        >
+          {exporting ? (
+            <>
+              <SpoolIcon size={16} className="spin" /> Exporting…
+            </>
+          ) : (
+            `Export ${selected.size}`
+          )}
+        </button>
+      </div>
 
-      {exportResult && (
-        <div className="export-result">
-          <p>
-            Wrote {exportResult.results.filter((r) => r.ok).length}/{exportResult.results.length}{' '}
-            images to <code>{exportResult.outputDir}</code>
-          </p>
-          <ul>
-            {exportResult.results
-              .filter((r) => !r.ok)
-              .map((r) => (
-                <li key={r.filename} className="status-error">
-                  {r.filename}: {r.error}
-                </li>
-              ))}
-          </ul>
-        </div>
-      )}
+      <AnimatePresence>
+        {exportResult && (
+          <motion.div
+            className={`export-result ${failures.length ? 'has-failures' : ''}`}
+            initial={{ opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+          >
+            <div className="export-result-row">
+              <span>
+                <strong>{successCount}</strong> of {exportResult.results.length} mockups folded neatly into{' '}
+                <code>{exportResult.outputDir}</code>
+              </span>
+              <button className="btn btn-small" onClick={() => window.api.revealInFinder(exportResult.outputDir)}>
+                <FolderIcon size={14} /> Open folder
+              </button>
+              <button className="btn btn-ghost btn-small" onClick={() => setExportResult(null)}>
+                Dismiss
+              </button>
+            </div>
+            {failures.length > 0 && (
+              <ul>
+                {failures.map((r) => (
+                  <li key={r.filename} className="status-error">
+                    {r.filename}: {r.error}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="export-grid">
+        {visibleShirts.map((filename, i) => (
+          <ExportCard
+            key={filename}
+            filename={filename}
+            name={shirtsConfig[filename]?.name ?? filename}
+            tags={shirtsConfig[filename]?.tags ?? NO_TAGS}
+            src={previews[filename]?.src}
+            selected={selected.has(filename)}
+            index={i}
+            onToggle={toggle}
+            observe={observe}
+          />
+        ))}
+      </div>
+
+      {visibleShirts.length === 0 && <p className="hint">No shirts match “{search}”.</p>}
     </div>
   )
 }

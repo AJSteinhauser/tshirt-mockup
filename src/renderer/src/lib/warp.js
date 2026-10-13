@@ -1,4 +1,4 @@
-import { computeHomography, applyHomography, quadBounds, pointInQuad } from './homography.js'
+import { computeHomography, applyHomography, quadBounds, pointInQuad, rectToQuad } from './homography.js'
 
 function sampleBilinear(imageData, sx, sy) {
   const { data, width, height } = imageData
@@ -87,4 +87,27 @@ export function warpImageIntoQuad({
   }
 
   destCtx.putImageData(destImageData, minX, minY)
+}
+
+function warpDesignOntoShirt({ destCtx, sourceImageData, transform, templateQuad, shirtQuad, scale = 1 }) {
+  const templateToShirt = computeHomography(templateQuad, shirtQuad)
+  const toDest = (p) => ({ x: p.x * scale, y: p.y * scale })
+  warpImageIntoQuad({
+    destCtx,
+    destWidth: destCtx.canvas.width,
+    destHeight: destCtx.canvas.height,
+    sourceImageData,
+    dstQuad: rectToQuad(transform).map((p) => toDest(applyHomography(templateToShirt, p))),
+    clipQuad: shirtQuad.map(toDest)
+  })
+}
+
+export function composeShirtPreview({ shirtImage, ...placement }) {
+  const canvas = document.createElement('canvas')
+  canvas.width = shirtImage.width
+  canvas.height = shirtImage.height
+  const destCtx = canvas.getContext('2d')
+  destCtx.drawImage(shirtImage, 0, 0)
+  warpDesignOntoShirt({ destCtx, ...placement })
+  return canvas.toDataURL('image/png')
 }

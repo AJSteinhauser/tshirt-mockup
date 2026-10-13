@@ -12,6 +12,9 @@ function createWindow() {
     width: 1400,
     height: 960,
     show: true,
+    titleBarStyle: 'hiddenInset',
+    trafficLightPosition: { x: 18, y: 20 },
+    backgroundColor: '#F3ECDF',
     icon: existsSync(DEV_ICON_PATH) ? DEV_ICON_PATH : undefined,
     webPreferences: {
       preload: join(app.getAppPath(), 'out/preload/index.mjs'),

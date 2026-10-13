@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
 import QuadEditor from '../components/QuadEditor.jsx'
+import ScreenHeader from '../components/ScreenHeader.jsx'
+import SideToggle from '../components/SideToggle.jsx'
+import SaveStitch from '../components/SaveStitch.jsx'
+import { useElementSize } from '../lib/useElementSize.js'
 
 const AUTOSAVE_DELAY = 500
 
@@ -7,7 +11,7 @@ function quadsEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b)
 }
 
-export default function TemplateSetup({ side, templateSrcs, templateQuads, onSaved }) {
+export default function TemplateSetup({ side, onSideChange, templateSrcs, templateQuads, onSaved }) {
   const [localQuad, setLocalQuad] = useState(templateQuads[side])
   const [initialQuad, setInitialQuad] = useState(templateQuads[side])
   const [status, setStatus] = useState('saved') // 'saving' | 'saved'
@@ -35,25 +39,33 @@ export default function TemplateSetup({ side, templateSrcs, templateQuads, onSav
   }, [localQuad, side])
 
   const isDirty = !quadsEqual(localQuad, initialQuad)
+  const [slotRef, slot] = useElementSize()
 
   return (
-    <div className="screen">
-      <h2>1. Template Setup — {side}</h2>
-      <p className="hint">
-        Drag the corners to mark the {side} print area. Changes save automatically.
-      </p>
-      {templateSrcs[side] && (
-        <QuadEditor imageSrc={templateSrcs[side]} quad={localQuad} onChange={setLocalQuad} />
-      )}
-      <div className="actions">
-        <button onClick={() => setLocalQuad(initialQuad)} disabled={!isDirty}>
-          Reset
+    <div className="screen screen-fit">
+      <ScreenHeader
+        eyebrow="Workroom · Template"
+        title={`Mark the ${side} print area`}
+        hint="Drag the corners to outline where designs may print. Set it once and leave it."
+      >
+        {localQuad && <SaveStitch status={status} />}
+        <button className="btn btn-ghost" onClick={() => setLocalQuad(initialQuad)} disabled={!isDirty}>
+          Undo changes
         </button>
-        {localQuad && (
-          <span className={status === 'saving' ? 'status-pending' : 'status-ok'}>
-            {status === 'saving' ? 'Saving…' : 'Saved'}
-          </span>
-        )}
+        <SideToggle value={side} onChange={onSideChange} />
+      </ScreenHeader>
+      <div className="hoop-card hoop-fill">
+        <div ref={slotRef} className="canvas-slot">
+          {templateSrcs[side] && (
+            <QuadEditor
+              imageSrc={templateSrcs[side]}
+              quad={localQuad}
+              onChange={setLocalQuad}
+              maxWidth={slot.width}
+              maxHeight={slot.height}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

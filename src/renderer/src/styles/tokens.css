@@ -1,0 +1,46 @@
+@import '@fontsource-variable/fraunces/full.css';
+@import '@fontsource-variable/fraunces/full-italic.css';
+@import '@fontsource-variable/nunito-sans';
+
+:root {
+  --linen: #f3ecdf;
+  --linen-deep: #ebe2d1;
+  --paper: #fbf7ef;
+  --cream: #fffdf8;
+  --ink: #3b3229;
+  --ink-soft: #7a6e60;
+  --ink-faint: #a89b8a;
+  --sage: #8a9a5b;
+  --sage-wash: #e4e8d3;
+  --moss: #5c6a3a;
+  --moss-deep: #4a5630;
+  --terracotta: #c2714f;
+  --terracotta-wash: #f4e0d5;
+  --butter: #e8c46b;
+  --butter-wash: #f8ecc9;
+  --rose: #d9a79f;
+  --rose-deep: #b5584a;
+  --thread: #b9a88f;
+  --thread-soft: #d9ccb8;
+  --wood: #b08a5e;
+
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-ui: 'Nunito Sans Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --shadow-paper: 0 1px 0 rgba(59, 50, 41, 0.04), 0 6px 18px -8px rgba(59, 50, 41, 0.22);
+  --shadow-lift: 0 2px 0 rgba(59, 50, 41, 0.05), 0 16px 32px -14px rgba(59, 50, 41, 0.35);
+  --stitch: 2px dashed var(--thread-soft);
+
+  --linen-texture: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9 0.35' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.36 0 0 0 0 0.29 0 0 0 0 0.2 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  --canvas-stroke: var(--moss);
+  --canvas-fill: rgba(138, 154, 91, 0.22);
+  --canvas-active: var(--rose-deep);
+  --canvas-ring: var(--cream);
+  --canvas-halo: rgba(255, 253, 248, 0.7);
+  --canvas-handle: var(--terracotta);
+  --canvas-print-area: var(--terracotta);
+}
