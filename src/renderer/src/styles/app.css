@@ -55,14 +55,129 @@ h3 {
 
 .app {
   display: flex;
+  flex-direction: column;
   height: 100%;
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 
 main {
   flex: 1;
   min-width: 0;
   overflow: auto;
-  padding: 36px 40px 48px;
+  padding: 28px 36px 28px;
+}
+
+/* ---------- cottage chrome ---------- */
+
+.cottage-eaves {
+  position: relative;
+  z-index: 3;
+  flex-shrink: 0;
+  line-height: 0;
+  -webkit-app-region: drag;
+  user-select: none;
+  filter: drop-shadow(0 3px 4px rgba(107, 79, 58, 0.14));
+}
+
+.cottage-sign {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  margin-left: -75px;
+  width: 150px;
+  height: 52px;
+  transform-origin: 50% 0;
+  -webkit-app-region: no-drag;
+}
+
+.cottage-sign-text {
+  position: absolute;
+  inset: 14px 8px 4px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--bark);
+}
+
+.sidebar-ivy {
+  position: absolute;
+  top: -4px;
+  right: 10px;
+  pointer-events: none;
+}
+
+.cross-stitch {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.sidebar-garden {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-top: 12px;
+}
+
+.garden-flower {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.sidebar:hover .garden-flower,
+.sidebar-garden.is-celebrating .garden-flower {
+  animation: flower-sway 1.6s ease-in-out infinite alternate;
+}
+
+.sidebar-garden.is-celebrating .garden-flower {
+  animation-duration: 0.5s;
+}
+
+.garden-tag {
+  position: relative;
+  max-width: 200px;
+  padding: 6px 12px 6px 20px;
+  border-radius: 4px 10px 10px 4px;
+  background: var(--honey-wood);
+  box-shadow: 0 2px 0 var(--honey-wood-deep);
+  color: var(--bark);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 12.5px;
+  line-height: 1.3;
+  text-align: center;
+  transform: rotate(-1.5deg);
+}
+
+.garden-tag-hole {
+  position: absolute;
+  left: 7px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: var(--linen-deep);
+  box-shadow: inset 0 1px 1px rgba(107, 79, 58, 0.4);
+}
+
+@keyframes flower-sway {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(6deg);
+  }
 }
 
 .screen-frame {
@@ -72,31 +187,15 @@ main {
 }
 
 .sidebar {
-  width: 232px;
+  width: 244px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 22px;
-  padding: 56px 14px 20px;
+  padding: 24px 14px 20px;
   background: var(--linen-deep) var(--linen-texture);
   border-right: var(--stitch);
-  -webkit-app-region: drag;
-}
-
-.sidebar button {
-  -webkit-app-region: no-drag;
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 10px;
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 600;
-  font-style: italic;
-  color: var(--moss);
+  position: relative;
 }
 
 .sidebar-section {
@@ -205,14 +304,12 @@ main {
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  -webkit-app-region: drag;
 }
 
 .screen-header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  -webkit-app-region: no-drag;
 }
 
 .screen-header h1 {
@@ -243,6 +340,7 @@ main {
   position: sticky;
   bottom: 0;
   padding-top: 8px;
+  z-index: 4;
 }
 
 .actions {
@@ -1050,7 +1148,7 @@ label,
 
 .toolbar {
   position: sticky;
-  top: -36px;
+  top: -28px;
   z-index: 5;
   display: flex;
   align-items: center;
@@ -1289,7 +1387,6 @@ label,
     width: 72px;
   }
 
-  .sidebar-brand span,
   .sidebar-section-title,
   .sidebar-item-label,
   .sidebar-badge {

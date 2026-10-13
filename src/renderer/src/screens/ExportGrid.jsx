@@ -26,7 +26,8 @@ export default function ExportGrid({
   onSideChange,
   onNavigate,
   design,
-  transform
+  transform,
+  onExported
 }) {
   const templateQuad = templateQuads[side]
 
@@ -173,6 +174,7 @@ export default function ExportGrid({
     })
     setExportResult(result)
     setExporting(false)
+    if (result.results.some((r) => r.ok)) onExported()
   }
 
   const allVisibleSelected = visibleShirts.length > 0 && visibleShirts.every((f) => selected.has(f))

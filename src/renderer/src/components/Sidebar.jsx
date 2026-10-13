@@ -1,5 +1,7 @@
 import { motion } from 'motion/react'
-import { BasketIcon, HoopIcon, ScissorsIcon, ShirtIcon, SprigIcon } from './ornaments.jsx'
+import { BasketIcon, CrossStitchFlower, HoopIcon, ScissorsIcon, ShirtIcon } from './ornaments.jsx'
+import Ivy from './Ivy.jsx'
+import SidebarGarden from './SidebarGarden.jsx'
 
 const SECTIONS = [
   {
@@ -19,16 +21,14 @@ const SECTIONS = [
   }
 ]
 
-export default function Sidebar({ screen, onNavigate, badges }) {
+export default function Sidebar({ screen, onNavigate, badges, status, celebrate }) {
   return (
     <aside className="sidebar">
-      <div className="sidebar-brand">
-        <SprigIcon size={22} />
-        <span>Sewing Room</span>
-      </div>
+      <Ivy />
       {SECTIONS.map((section) => (
         <nav key={section.title} className="sidebar-section">
           <div className="sidebar-section-title">
+            <CrossStitchFlower />
             {section.title}
             {section.subtitle && <span className="sidebar-section-subtitle">{section.subtitle}</span>}
           </div>
@@ -56,6 +56,7 @@ export default function Sidebar({ screen, onNavigate, badges }) {
           ))}
         </nav>
       ))}
+      <SidebarGarden status={status} celebrate={celebrate} />
     </aside>
   )
 }

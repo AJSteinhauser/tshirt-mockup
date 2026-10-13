@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import Sidebar from './components/Sidebar.jsx'
+import CottageEaves from './components/CottageEaves.jsx'
 import { NeedleAndThread } from './components/ornaments.jsx'
 import TemplateSetup from './screens/TemplateSetup.jsx'
 import ShirtCalibration from './screens/ShirtCalibration.jsx'
@@ -30,6 +31,7 @@ function ScreenPanel({ active, children }) {
 export default function App() {
   const [screen, setScreen] = useState('arrange')
   const [visited, setVisited] = useState(() => new Set(['arrange']))
+  const [exportsCompleted, setExportsCompleted] = useState(0)
   const mainRef = useRef(null)
   const [templateSrcs, setTemplateSrcs] = useState({ front: null, back: null })
   const [templateQuads, setTemplateQuads] = useState({ front: null, back: null })
@@ -94,6 +96,11 @@ export default function App() {
     }
   }
 
+  const gardenStatus =
+    templatesDone === 2 && calibratedCount > 0
+      ? `${calibratedCount} mockups hung up & ready`
+      : 'A few things to set up in the Workroom'
+
   return (
     <AnimatePresence mode="wait">
       {loading ? (
@@ -109,76 +116,86 @@ export default function App() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
         >
-          <Sidebar screen={screen} onNavigate={navigate} badges={badges} />
-          <main ref={mainRef}>
-            {visited.has('template') && (
-              <ScreenPanel active={screen === 'template'}>
-                <TemplateSetup
-                  side={templateSide}
-                  onSideChange={setTemplateSide}
-                  templateSrcs={templateSrcs}
-                  templateQuads={templateQuads}
-                  onSaved={setTemplateQuadForSide}
-                />
-              </ScreenPanel>
-            )}
-            {visited.has('mockups') && (
-              <ScreenPanel active={screen === 'mockups'}>
-                <ShirtCalibration
-                  active={screen === 'mockups'}
-                  shirtFiles={shirtFiles}
-                  shirtsConfig={shirtsConfig}
-                  templateSrcs={templateSrcs}
-                  templateQuads={templateQuads}
-                  designs={designs}
-                  transforms={transforms}
-                  onShirtFilesChanged={setShirtFiles}
-                  onShirtsConfigChanged={setShirtsConfig}
-                  onSaved={(filename, partial) =>
-                    setShirtsConfig((prev) => ({
-                      ...prev,
-                      [filename]: {
-                        ...(prev[filename] ?? { quad: null, side: 'front', tags: [], name: filename }),
-                        ...partial
-                      }
-                    }))
-                  }
-                />
-              </ScreenPanel>
-            )}
-            {visited.has('arrange') && (
-              <ScreenPanel active={screen === 'arrange'}>
-                <DesignPlacement
-                  side={studioSide}
-                  onSideChange={setStudioSide}
-                  onNavigate={navigate}
-                  templateSrcs={templateSrcs}
-                  templateQuads={templateQuads}
-                  shirtFiles={shirtFiles}
-                  shirtsConfig={shirtsConfig}
-                  design={designs[studioSide]}
-                  setDesign={(d) => setDesignForSide(studioSide, d)}
-                  transform={transforms[studioSide]}
-                  setTransform={(t) => setTransformForSide(studioSide, t)}
-                />
-              </ScreenPanel>
-            )}
-            {visited.has('gather') && (
-              <ScreenPanel active={screen === 'gather'}>
-                <ExportGrid
-                  active={screen === 'gather'}
-                  side={studioSide}
-                  onSideChange={setStudioSide}
-                  onNavigate={navigate}
-                  templateQuads={templateQuads}
-                  shirtFiles={shirtFiles}
-                  shirtsConfig={shirtsConfig}
-                  design={designs[studioSide]}
-                  transform={transforms[studioSide]}
-                />
-              </ScreenPanel>
-            )}
-          </main>
+          <CottageEaves swingKey={screen} />
+          <div className="app-body">
+            <Sidebar
+              screen={screen}
+              onNavigate={navigate}
+              badges={badges}
+              status={gardenStatus}
+              celebrate={exportsCompleted}
+            />
+            <main ref={mainRef}>
+              {visited.has('template') && (
+                <ScreenPanel active={screen === 'template'}>
+                  <TemplateSetup
+                    side={templateSide}
+                    onSideChange={setTemplateSide}
+                    templateSrcs={templateSrcs}
+                    templateQuads={templateQuads}
+                    onSaved={setTemplateQuadForSide}
+                  />
+                </ScreenPanel>
+              )}
+              {visited.has('mockups') && (
+                <ScreenPanel active={screen === 'mockups'}>
+                  <ShirtCalibration
+                    active={screen === 'mockups'}
+                    shirtFiles={shirtFiles}
+                    shirtsConfig={shirtsConfig}
+                    templateSrcs={templateSrcs}
+                    templateQuads={templateQuads}
+                    designs={designs}
+                    transforms={transforms}
+                    onShirtFilesChanged={setShirtFiles}
+                    onShirtsConfigChanged={setShirtsConfig}
+                    onSaved={(filename, partial) =>
+                      setShirtsConfig((prev) => ({
+                        ...prev,
+                        [filename]: {
+                          ...(prev[filename] ?? { quad: null, side: 'front', tags: [], name: filename }),
+                          ...partial
+                        }
+                      }))
+                    }
+                  />
+                </ScreenPanel>
+              )}
+              {visited.has('arrange') && (
+                <ScreenPanel active={screen === 'arrange'}>
+                  <DesignPlacement
+                    side={studioSide}
+                    onSideChange={setStudioSide}
+                    onNavigate={navigate}
+                    templateSrcs={templateSrcs}
+                    templateQuads={templateQuads}
+                    shirtFiles={shirtFiles}
+                    shirtsConfig={shirtsConfig}
+                    design={designs[studioSide]}
+                    setDesign={(d) => setDesignForSide(studioSide, d)}
+                    transform={transforms[studioSide]}
+                    setTransform={(t) => setTransformForSide(studioSide, t)}
+                  />
+                </ScreenPanel>
+              )}
+              {visited.has('gather') && (
+                <ScreenPanel active={screen === 'gather'}>
+                  <ExportGrid
+                    active={screen === 'gather'}
+                    side={studioSide}
+                    onSideChange={setStudioSide}
+                    onNavigate={navigate}
+                    templateQuads={templateQuads}
+                    shirtFiles={shirtFiles}
+                    shirtsConfig={shirtsConfig}
+                    design={designs[studioSide]}
+                    transform={transforms[studioSide]}
+                    onExported={() => setExportsCompleted((n) => n + 1)}
+                  />
+                </ScreenPanel>
+              )}
+            </main>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>

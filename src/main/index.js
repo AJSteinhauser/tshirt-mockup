@@ -13,7 +13,7 @@ function createWindow() {
     height: 960,
     show: true,
     titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 20 },
+    trafficLightPosition: { x: 16, y: 14 },
     backgroundColor: '#F3ECDF',
     icon: existsSync(DEV_ICON_PATH) ? DEV_ICON_PATH : undefined,
     webPreferences: {

@@ -153,3 +153,20 @@ export function NeedleAndThread({ size = 120 }) {
     </svg>
   )
 }
+
+export function CrossStitchFlower() {
+  const stitches = [
+    { x: 4, y: 1, color: 'var(--rose-deep)' },
+    { x: 1, y: 4, color: 'var(--rose-deep)' },
+    { x: 7, y: 4, color: 'var(--rose-deep)' },
+    { x: 4, y: 7, color: 'var(--rose-deep)' },
+    { x: 4, y: 4, color: 'var(--butter)' }
+  ]
+  return (
+    <svg width="11" height="11" viewBox="0 0 11 11" aria-hidden="true" className="cross-stitch">
+      {stitches.map(({ x, y, color }) => (
+        <path key={`${x}-${y}`} d={`M${x} ${y} l3 3 m0 -3 l-3 3`} stroke={color} strokeWidth="1.1" strokeLinecap="round" />
+      ))}
+    </svg>
+  )
+}
