@@ -7,7 +7,7 @@ function useSvgId() {
   return `stitch-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
 }
 
-const stitchIn = {
+export const stitchIn = {
   hidden: { opacity: 0, scale: 0.4 },
   shown: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 380, damping: 20 } }
 }
@@ -44,7 +44,7 @@ function SatinPetal({ length, width, color, edge, angle = 0 }) {
   )
 }
 
-function FrenchKnots({ color, points }) {
+export function FrenchKnots({ color, points }) {
   return (
     <motion.g variants={stitchIn}>
       {points.map(([x, y], i) => (
@@ -57,7 +57,7 @@ function FrenchKnots({ color, points }) {
   )
 }
 
-function RunningStitch({ d, color = 'var(--moss)', width = 1.2 }) {
+export function RunningStitch({ d, color = 'var(--moss)', width = 1.2 }) {
   return (
     <motion.path
       d={d}
@@ -71,7 +71,7 @@ function RunningStitch({ d, color = 'var(--moss)', width = 1.2 }) {
   )
 }
 
-function FishboneLeaf({ x, y, angle, size = 1 }) {
+export function FishboneLeaf({ x, y, angle, size = 1 }) {
   const length = 9 * size
   const width = 3.6 * size
   const clipId = useSvgId()
@@ -172,7 +172,7 @@ function Embroidery({ width, height, viewBox, animate, delay = 0, className, chi
       aria-hidden="true"
       initial={animate ? 'hidden' : false}
       animate="shown"
-      variants={{ shown: { transition: { staggerChildren: 0.06, delayChildren: delay } } }}
+      variants={{ shown: { transition: { staggerChildren: 0.022, delayChildren: delay } } }}
     >
       {children}
     </motion.svg>
@@ -211,28 +211,6 @@ export function EmbroideredHoop({ size = 120, animate = true }) {
       <g transform="translate(60 70) scale(1.32) translate(-60 -66)">
         <Posy />
       </g>
-    </Embroidery>
-  )
-}
-
-export function EmbroideredGarland({ animate = true }) {
-  const blooms = [
-    { Flower: EmbroideredDaisy, x: 40, y: 14, size: 0.65 },
-    { Flower: EmbroideredForgetMeNot, x: 92, y: 16, size: 0.8 },
-    { Flower: EmbroideredRose, x: 150, y: 13, size: 0.75 },
-    { Flower: EmbroideredForgetMeNot, x: 208, y: 16, size: 0.8 },
-    { Flower: EmbroideredDaisy, x: 260, y: 14, size: 0.65 }
-  ]
-  return (
-    <Embroidery width="450" height="42" viewBox="0 0 300 28" animate={animate} delay={0.15} className="embroidered-garland">
-      <RunningStitch d="M6 16 C 40 6, 70 24, 110 15 S 190 6, 230 16 S 280 22, 294 14" />
-      <FishboneLeaf x={66} y={17} angle={-70} size={0.7} />
-      <FishboneLeaf x={122} y={14} angle={65} size={0.7} />
-      <FishboneLeaf x={180} y={12} angle={-65} size={0.7} />
-      <FishboneLeaf x={236} y={17} angle={70} size={0.7} />
-      {blooms.map(({ Flower, x, y, size }) => (
-        <Flower key={x} x={x} y={y} size={size} />
-      ))}
     </Embroidery>
   )
 }

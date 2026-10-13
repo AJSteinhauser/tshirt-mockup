@@ -14,5 +14,11 @@ contextBridge.exposeInMainWorld('api', {
   saveShirtMeta: (filename, partial) => ipcRenderer.invoke('save-shirt-meta', filename, partial),
   pickDesignImage: () => ipcRenderer.invoke('pick-design-image'),
   revealInFinder: (path) => ipcRenderer.invoke('reveal-in-finder', path),
-  exportAll: (payload) => ipcRenderer.invoke('export-all', payload)
+  exportAll: (payload) => ipcRenderer.invoke('export-all', payload),
+  stopExport: () => ipcRenderer.invoke('export-stop'),
+  onExportProgress: (callback) => {
+    const listener = (_e, progress) => callback(progress)
+    ipcRenderer.on('export-progress', listener)
+    return () => ipcRenderer.removeListener('export-progress', listener)
+  }
 })

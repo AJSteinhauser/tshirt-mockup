@@ -21,6 +21,8 @@ const TEMPLATE_CONFIG_PATH = join(CONFIG_DIR, 'template.json')
 const SHIRTS_CONFIG_PATH = join(CONFIG_DIR, 'shirts.json')
 const OUTPUT_DIR = app.getPath('downloads')
 
+let exportStopRequested = false
+
 // fs.promises.cp can't read from inside an app.asar archive (packaged builds) — it uses
 // internals that bypass Electron's asar-aware fs shim. Walk and copy by hand instead, using
 // only the primitives (readdir/readFile/writeFile/mkdir) that shim actually supports.
@@ -197,12 +199,21 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('reveal-in-finder', async (_e, path) => shell.openPath(path))
 
-  ipcMain.handle('export-all', async (_e, payload) => {
+  ipcMain.handle('export-all', async (event, payload) => {
+    exportStopRequested = false
     return exportDesignToAllShirts({
       ...payload,
       shirtsDir: SHIRTS_DIR,
       outputDir: OUTPUT_DIR,
-      shirtsConfigPath: SHIRTS_CONFIG_PATH
+      shirtsConfigPath: SHIRTS_CONFIG_PATH,
+      onProgress: (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send('export-progress', progress)
+      },
+      shouldStop: () => exportStopRequested
     })
+  })
+
+  ipcMain.handle('export-stop', () => {
+    exportStopRequested = true
   })
 }

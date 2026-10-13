@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import ScreenHeader from '../components/ScreenHeader.jsx'
 import SideToggle from '../components/SideToggle.jsx'
 import NoticeCard from '../components/NoticeCard.jsx'
 import ExportCard from '../components/ExportCard.jsx'
 import { FolderIcon, ScissorsIcon, SpoolIcon } from '../components/ornaments.jsx'
-import { EmbroideredGarland, EmbroideredHoop } from '../components/embroidery.jsx'
+import { EmbroideredHoop } from '../components/embroidery.jsx'
+import ExportDialog from '../components/ExportDialog.jsx'
 import { composeShirtPreview } from '../lib/warp.js'
 import { loadImageData } from '../lib/loadImage.js'
 import { SHIRT_THUMB_DIM, loadShirtThumbnail } from '../lib/shirtThumbnails.js'
@@ -42,8 +44,8 @@ export default function ExportGrid({
   const [renderingCount, setRenderingCount] = useState(0)
   const [nearView, setNearView] = useState(() => new Set())
   const [selected, setSelected] = useState(() => new Set(calibratedShirts))
-  const [exporting, setExporting] = useState(false)
-  const [exportResult, setExportResult] = useState(null)
+  const [exportPayload, setExportPayload] = useState(null)
+  const [lastExport, setLastExport] = useState(null)
   const previewsRef = useRef(previews)
   previewsRef.current = previews
   const inFlight = useRef(new Map())
@@ -162,26 +164,24 @@ export default function ExportGrid({
     })
   }
 
-  async function handleExport() {
+  function handleExport() {
     if (!design || !transform || !templateQuad || selected.size === 0) return
-    setExporting(true)
-    setExportResult(null)
-    const result = await window.api.exportAll({
+    setExportPayload({
       designName: design.name,
       designDataUrl: design.dataUrl,
       templateQuads,
       designCorners: rectToQuad(transform),
       selectedFilenames: Array.from(selected)
     })
-    setExportResult(result)
-    setExporting(false)
-    if (result.results.some((r) => r.ok)) onExported()
+  }
+
+  function handleDialogClose(result) {
+    setExportPayload(null)
+    if (result.results.some((r) => r.ok)) setLastExport(result)
   }
 
   const allVisibleSelected = visibleShirts.length > 0 && visibleShirts.every((f) => selected.has(f))
   const noneVisibleSelected = visibleShirts.every((f) => !selected.has(f))
-  const failures = exportResult?.results.filter((r) => !r.ok) ?? []
-  const successCount = exportResult ? exportResult.results.length - failures.length : 0
 
   const header = (
     <ScreenHeader
@@ -244,51 +244,48 @@ export default function ExportGrid({
         <button
           className="btn btn-primary toolbar-export"
           onClick={handleExport}
-          disabled={exporting || selected.size === 0}
+          disabled={Boolean(exportPayload) || selected.size === 0}
         >
-          {exporting ? (
-            <>
-              <SpoolIcon size={16} className="spin" /> Exporting…
-            </>
-          ) : (
-            `Export ${selected.size}`
-          )}
+          Export {selected.size}
         </button>
       </div>
 
       <AnimatePresence>
-        {exportResult && (
+        {lastExport && (
           <motion.div
-            className={`export-result ${failures.length ? 'has-failures' : ''}`}
-            initial={{ opacity: 0, y: -8, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
+            className="last-export"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
           >
-            {successCount > 0 && <EmbroideredGarland />}
-            <div className="export-result-row">
-              <span>
-                <strong>{successCount}</strong> of {exportResult.results.length} mockups folded neatly into{' '}
-                <code>{exportResult.outputDir}</code>
-              </span>
-              <button className="btn btn-small" onClick={() => window.api.revealInFinder(exportResult.outputDir)}>
-                <FolderIcon size={14} /> Open folder
-              </button>
-              <button className="btn btn-ghost btn-small" onClick={() => setExportResult(null)}>
-                Dismiss
-              </button>
-            </div>
-            {failures.length > 0 && (
-              <ul>
-                {failures.map((r) => (
-                  <li key={r.filename} className="status-error">
-                    {r.filename}: {r.error}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <span>
+              Last export → <code>{lastExport.outputDir}</code>
+            </span>
+            <button className="btn btn-ghost btn-small" onClick={() => window.api.revealInFinder(lastExport.outputDir)}>
+              <FolderIcon size={14} /> Open folder
+            </button>
+            <button className="btn btn-ghost btn-small" onClick={() => setLastExport(null)} aria-label="Dismiss">
+              ×
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {createPortal(
+        <AnimatePresence>
+          {exportPayload && (
+            <ExportDialog
+              key="export-dialog"
+              payload={exportPayload}
+              shirtsConfig={shirtsConfig}
+              previews={previews}
+              onClose={handleDialogClose}
+              onExported={onExported}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       <div className="export-grid">
         {visibleShirts.map((filename, i) => (

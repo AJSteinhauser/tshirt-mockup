@@ -76,6 +76,203 @@ main {
   padding: 28px 36px 28px;
 }
 
+/* ---------- export dialog ---------- */
+
+.export-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(235, 226, 209, 0.62);
+  backdrop-filter: blur(6px);
+}
+
+.export-dialog {
+  position: relative;
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 30px 34px 26px;
+  border-radius: var(--radius-lg);
+  background: var(--paper);
+  box-shadow: 0 30px 60px -24px rgba(59, 50, 41, 0.45), var(--shadow-paper);
+  text-align: center;
+  outline: none;
+}
+
+.export-dialog::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: var(--stitch);
+  border-radius: calc(var(--radius-lg) - 7px);
+  pointer-events: none;
+}
+
+.export-dialog > * {
+  position: relative;
+  z-index: 1;
+}
+
+.export-dialog h2 {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.export-dialog h2 em {
+  color: var(--terracotta);
+}
+
+.export-dialog-count {
+  margin: 0;
+  min-height: 20px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.export-dialog-count code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--linen);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.export-dialog-current {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+.export-dialog-failures ul {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  max-height: 100px;
+  overflow-y: auto;
+}
+
+.export-dialog-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.live-hoop {
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  margin: 8px 0 2px;
+}
+
+.live-hoop > * {
+  grid-area: 1 / 1;
+}
+
+.live-hoop-frame {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 6px solid var(--wood);
+  box-shadow: 0 0 0 1px #9c7a52, var(--shadow-paper);
+}
+
+.live-hoop-screw {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  width: 16px;
+  height: 9px;
+  margin-left: -8px;
+  border-radius: 3px;
+  background: var(--wood);
+  box-shadow: inset 0 0 0 1px #9c7a52;
+}
+
+.live-hoop-fabric {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--cream);
+}
+
+.live-hoop-fabric::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(255, 253, 248, 0.8);
+}
+
+.live-hoop-shirt {
+  grid-area: 1 / 1;
+}
+
+.live-hoop-shirt img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 35%;
+}
+
+.live-hoop-shirt .shirt-thumb {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.live-hoop-needle {
+  position: absolute;
+  top: -18px;
+  right: -34px;
+}
+
+.stitched-branch {
+  display: block;
+  margin: 0 -8px;
+  overflow: visible;
+}
+
+.last-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 16px;
+  border-radius: 999px;
+  background: var(--sage-wash);
+  color: var(--moss-deep);
+  font-size: 13px;
+}
+
+.last-export > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.last-export code {
+  font-size: 12px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* ---------- embroidery ---------- */
 
 .embroidering {
@@ -100,11 +297,6 @@ main {
   bottom: 14px;
   z-index: 0;
   pointer-events: none;
-}
-
-.embroidered-garland {
-  display: block;
-  margin: 10px auto -4px;
 }
 
 .design-drop .embroidered-hoop {
@@ -1237,43 +1429,6 @@ label,
 .toolbar-export {
   margin-left: auto;
   min-width: 120px;
-}
-
-.export-result {
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: var(--sage-wash);
-  color: var(--moss-deep);
-}
-
-.export-result.has-failures {
-  background: var(--butter-wash);
-  color: #6b5114;
-}
-
-.export-result-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  flex-wrap: wrap;
-}
-
-.export-result-row > span {
-  flex: 1;
-}
-
-.export-result code {
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 253, 248, 0.7);
-  font-size: 12px;
-  word-break: break-all;
-}
-
-.export-result ul {
-  margin: 0;
-  padding: 0 16px 12px 32px;
 }
 
 .status-error {

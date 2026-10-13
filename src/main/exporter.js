@@ -24,7 +24,9 @@ export async function exportDesignToAllShirts({
   selectedFilenames,
   shirtsDir,
   outputDir,
-  shirtsConfigPath
+  shirtsConfigPath,
+  onProgress = () => {},
+  shouldStop = () => false
 }) {
   const shirtsConfig = JSON.parse(
     await readFile(shirtsConfigPath, 'utf-8').catch(() => '{}')
@@ -43,7 +45,13 @@ export async function exportDesignToAllShirts({
     ? selectedFilenames.map((filename) => [filename, shirtsConfig[filename]])
     : Object.entries(shirtsConfig)
 
-  for (const [filename, entry] of entries) {
+  let stopped = false
+  for (const [index, [filename, entry]] of entries.entries()) {
+    if (shouldStop()) {
+      stopped = true
+      break
+    }
+    onProgress({ phase: 'start', index, total: entries.length, filename })
     try {
       if (!entry?.quad || entry.quad.length !== 4) {
         results.push({ filename, ok: false, error: 'not calibrated' })
@@ -82,8 +90,10 @@ export async function exportDesignToAllShirts({
       results.push({ filename, ok: true, outPath })
     } catch (err) {
       results.push({ filename, ok: false, error: err.message })
+    } finally {
+      onProgress({ phase: 'done', index, total: entries.length, ...results[results.length - 1] })
     }
   }
 
-  return { outputDir: destDir, results }
+  return { outputDir: destDir, results, stopped }
 }
